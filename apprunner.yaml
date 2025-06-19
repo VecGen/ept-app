@@ -6,10 +6,9 @@ build:
       - echo "Installing dependencies..."
       - npm ci
     build:
-      - echo "Building the application..."
-      - npm run build
+      - echo "Build phase completed"
     post-build:
-      - echo "Build completed successfully"
+      - echo "Post-build completed"
   env:
     - name: NODE_ENV
       value: production
@@ -25,7 +24,10 @@ build:
       value: false
 run:
   runtime-version: 22.16.0
-  command: npm start
+  pre-run:
+    - echo "Building the application..."
+    - npm run build
+  command: npm run serve
   network:
     port: 8080
     env: PORT
