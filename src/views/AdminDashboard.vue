@@ -376,24 +376,33 @@ export default {
         }
         
         // Update analytics with real data (with fallbacks for missing analytics)
+        const analyticsData = analyticsResponse?.data || {}
         analytics.value = {
-          totalHoursSaved: analyticsResponse?.total_hours_saved || analyticsResponse?.total_time_saved || 0,
-          totalEntries: analyticsResponse?.total_entries || 0,
-          activeTeams: dashboardResponse.active_teams || 0,
-          activeDevelopers: dashboardResponse.active_developers || 0,
-          teamStats: analyticsResponse?.team_stats || [],
-          copilotUsage: analyticsResponse?.copilot_usage || {
-            withCopilot: 0,
-            withoutCopilot: 0,
-            total: 0
+          totalHoursSaved: analyticsData.total_time_saved || 0,
+          totalEntries: analyticsData.total_entries || 0,
+          activeTeams: analyticsData.teams_count || dashboardResponse.teams_count || 0,
+          activeDevelopers: analyticsData.developers_count || dashboardResponse.developers_count || 0,
+          teamStats: (analyticsData.team_breakdown || []).map(team => ({
+            name: team.team_name,
+            hours: team.time_saved,
+            entries: team.entries,
+            developers: team.developers_count
+          })),
+          copilotUsage: {
+            withCopilot: Math.round((analyticsData.copilot_usage_rate || 0) * (analyticsData.total_entries || 0) / 100),
+            withoutCopilot: (analyticsData.total_entries || 0) - Math.round((analyticsData.copilot_usage_rate || 0) * (analyticsData.total_entries || 0) / 100),
+            total: analyticsData.total_entries || 0
           }
         }
         
-        // Set recent activity from API
+        // Set recent activity from API (fallback to static data if not available)
         recentActivity.value = dashboardResponse.recent_activity || []
         
-        // Set top categories from API
-        topCategories.value = analyticsResponse?.top_categories || []
+        // Set top categories from monthly trends if available
+        topCategories.value = (analyticsData.monthly_trends || []).slice(0, 5).map(trend => ({
+          name: trend.month,
+          hours: trend.time_saved
+        }))
         
         console.log('Dashboard data loaded successfully')
         
