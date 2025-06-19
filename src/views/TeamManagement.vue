@@ -4,10 +4,10 @@
     <div class="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
       <h4 class="font-medium text-yellow-800">🔧 Debug Info</h4>
       <div class="text-sm text-yellow-700 mt-1">
-        <p>VITE_API_BASE_URL: <code>{{ import.meta.env.VITE_API_BASE_URL || 'undefined' }}</code></p>
+        <p>VITE_API_BASE_URL: <code>{{ viteApiBaseUrl || 'undefined' }}</code></p>
         <p>Computed BASE_URL: <code>{{ debugApiUrl }}</code></p>
-        <p>NODE_ENV: <code>{{ import.meta.env.NODE_ENV }}</code></p>
-        <p>MODE: <code>{{ import.meta.env.MODE }}</code></p>
+        <p>NODE_ENV: <code>{{ nodeEnv }}</code></p>
+        <p>MODE: <code>{{ mode }}</code></p>
       </div>
     </div>
 
@@ -265,6 +265,18 @@ export default {
       return import.meta.env.VITE_API_BASE_URL || 'https://mnwpivaen5.us-east-1.awsapprunner.com'
     })
 
+    const viteApiBaseUrl = computed(() => {
+      return import.meta.env.VITE_API_BASE_URL || 'https://mnwpivaen5.us-east-1.awsapprunner.com'
+    })
+
+    const nodeEnv = computed(() => {
+      return import.meta.env.NODE_ENV
+    })
+
+    const mode = computed(() => {
+      return import.meta.env.MODE
+    })
+
     const loadTeams = async () => {
       try {
         loading.value = true
@@ -491,7 +503,10 @@ export default {
       removeDeveloper,
       generateAccessLink,
       copyToClipboard,
-      debugApiUrl
+      debugApiUrl,
+      viteApiBaseUrl,
+      nodeEnv,
+      mode
     }
   }
 }
