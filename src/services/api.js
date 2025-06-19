@@ -1,6 +1,15 @@
 import axios from 'axios'
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+// Use HTTPS fallback instead of HTTP to prevent Mixed Content errors
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://mnwpivaen5.us-east-1.awsapprunner.com'
+
+// Debug logging to see what URL is being used
+console.log('🔧 API Configuration:', {
+  VITE_API_BASE_URL: import.meta.env.VITE_API_BASE_URL,
+  BASE_URL: BASE_URL,
+  NODE_ENV: import.meta.env.NODE_ENV,
+  MODE: import.meta.env.MODE
+})
 
 // Create axios instance
 const api = axios.create({
