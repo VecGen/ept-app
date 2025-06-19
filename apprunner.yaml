@@ -1,5 +1,5 @@
 version: 1.0
-runtime: nodejs18
+runtime: nodejs22
 build:
   commands:
     pre-build:
@@ -24,7 +24,7 @@ build:
     - name: VITE_DEBUG
       value: false
 run:
-  runtime-version: 18
+  runtime-version: 22.16.0
   command: npm start
   network:
     port: 8080
@@ -41,4 +41,4 @@ run:
     - name: VITE_APP_TITLE
       value: Efficiency Tracker
     - name: VITE_DEBUG
-      value: false 
+      value: false
