@@ -4,7 +4,7 @@ build:
   commands:
     pre-build:
       - echo "Installing dependencies..."
-      - npm ci
+      - npm install
     build:
       - echo "Build phase completed"
     post-build:
