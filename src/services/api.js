@@ -1,13 +1,13 @@
 import axios from 'axios'
 
-// Get the API base URL and ensure it's HTTPS in production
-let BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://mnwpivaen5.us-east-1.awsapprunner.com'
+// Get the API base URL - use relative URLs when no base URL is provided
+let BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
 
 // Remove trailing slash to prevent double slashes in URLs
 BASE_URL = BASE_URL.replace(/\/$/, '')
 
-// Force HTTPS in production to prevent Mixed Content errors
-if (window.location.protocol === 'https:' && BASE_URL.startsWith('http://')) {
+// Force HTTPS in production to prevent Mixed Content errors (only if BASE_URL is provided)
+if (BASE_URL && window.location.protocol === 'https:' && BASE_URL.startsWith('http://')) {
   console.warn('🚨 Converting HTTP to HTTPS to prevent Mixed Content error')
   BASE_URL = BASE_URL.replace('http://', 'https://')
 }
@@ -15,7 +15,7 @@ if (window.location.protocol === 'https:' && BASE_URL.startsWith('http://')) {
 // Debug logging to see what URL is being used
 console.log('🔧 API Configuration:', {
   VITE_API_BASE_URL: import.meta.env.VITE_API_BASE_URL,
-  BASE_URL: BASE_URL,
+  BASE_URL: BASE_URL || '(relative URLs)',
   NODE_ENV: import.meta.env.NODE_ENV,
   MODE: import.meta.env.MODE,
   location_protocol: window.location.protocol,
