@@ -87,12 +87,11 @@ export const getTeams = async () => {
   console.log('🔍 getTeams called - BASE_URL:', BASE_URL)
   console.log('🔍 Full URL:', `${BASE_URL}/api/teams`)
   
-  // Temporary fix: Use absolute HTTPS URL to bypass any baseURL issues
-  const response = await axios.get('https://mnwpivaen5.us-east-1.awsapprunner.com/api/teams', {
+  // Use relative URL to avoid CORS issues when on same domain
+  const response = await api.get('/api/teams', {
     headers: {
       'Cache-Control': 'no-cache',
-      'Pragma': 'no-cache',
-      'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+      'Pragma': 'no-cache'
     }
   })
   return response.data

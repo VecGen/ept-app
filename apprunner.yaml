@@ -16,8 +16,6 @@ build:
       value: production
     - name: VITE_MOCK_MODE
       value: false
-    - name: VITE_API_BASE_URL
-      value: https://mnwpivaen5.us-east-1.awsapprunner.com
     - name: VITE_APP_TITLE
       value: Efficiency Tracker
     - name: VITE_DEBUG
@@ -26,6 +24,7 @@ run:
   runtime-version: 22.16.0
   pre-run:
     - echo "Building application with environment variables:"
+    - echo "NODE_ENV=$NODE_ENV"
     - npx vite build
     - echo "Application built successfully"
   command: npm run serve
@@ -39,8 +38,6 @@ run:
       value: production
     - name: VITE_MOCK_MODE
       value: false
-    - name: VITE_API_BASE_URL
-      value: https://mnwpivaen5.us-east-1.awsapprunner.com
     - name: VITE_APP_TITLE
       value: Efficiency Tracker
     - name: VITE_DEBUG
