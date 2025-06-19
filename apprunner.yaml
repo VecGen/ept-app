@@ -28,6 +28,9 @@ build:
       value: false
 run:
   runtime-version: 22.16.0
+  pre-run:
+    - echo "Preparing to start application..."
+    - echo "NODE_ENV=$NODE_ENV"
   command: npm run serve
   network:
     port: 8080
