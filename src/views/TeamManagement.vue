@@ -231,7 +231,7 @@
 
 <script>
 import { ref, reactive, onMounted } from 'vue'
-import { getTeams, createTeam, deleteTeam } from '../services/api'
+import { getTeams, createTeam, deleteTeam, updateTeam as updateTeamAPI, addDeveloper, removeDeveloper } from '../services/api'
 import { useAuthStore } from '../stores/auth'
 import { useRouter } from 'vue-router'
 
@@ -337,10 +337,14 @@ export default {
         
         console.log('Updating team:', editingTeam.value)
         
-        // Note: The teams API doesn't seem to have an update endpoint in the backend
-        // This would need to be implemented in the API first
-        console.warn('Team update API not available yet')
-        error.value = 'Team update functionality not available yet in the API'
+        const response = await updateTeamAPI(editingTeam.value.name, {
+          team_name: editingTeam.value.name,
+          description: editingTeam.value.description || undefined
+        })
+        console.log('Team updated successfully:', response)
+        
+        // Reload teams to get updated list
+        await loadTeams()
         
         editingTeam.value = null
         
@@ -390,24 +394,18 @@ export default {
         
         console.log('Adding developer to team:', team.name, newDeveloperName.value)
         
-        // For now, add locally since the API endpoint would be POST /api/teams/{team_name}/developers
-        // This needs to be implemented in the backend API
-        const developerData = {
+        const response = await addDeveloper(team.name, {
           dev_name: newDeveloperName.value.trim(),
           dev_email: `${newDeveloperName.value.trim().toLowerCase().replace(/\s+/g, '.')}@company.com`
-        }
-        
-        // Import the addDeveloper API function if it exists
-        // For now, simulate the addition locally
-        if (!team.developers) team.developers = []
-        team.developers.push({
-          name: newDeveloperName.value.trim(),
-          email: developerData.dev_email
         })
-
-        newDeveloperName.value = ''
         
-        console.log('Developer added successfully (locally)')
+        console.log('Developer added successfully:', response)
+        
+        // Reload teams to get updated list
+        await loadTeams()
+        
+        // Reset form
+        newDeveloperName.value = ''
         
       } catch (err) {
         console.error('Failed to add developer:', err)
@@ -425,13 +423,11 @@ export default {
         
         console.log('Removing developer from team:', team.name, developer.name)
         
-        // For now, remove locally since the API endpoint would be DELETE /api/teams/{team_name}/developers/{developer_name}
-        // This needs to be implemented in the backend API
-        team.developers = team.developers.filter(d => 
-          (d.name || d) !== (developer.name || developer)
-        )
+        const response = await removeDeveloper(team.name, developer.name)
+        console.log('Developer removed successfully:', response)
         
-        console.log('Developer removed successfully (locally)')
+        // Reload teams to get updated list
+        await loadTeams()
         
       } catch (err) {
         console.error('Failed to remove developer:', err)

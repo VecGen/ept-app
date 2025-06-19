@@ -92,6 +92,17 @@ export const deleteTeam = async (teamName) => {
   return response.data
 }
 
+// Developer management functions
+export const addDeveloper = async (teamName, developerData) => {
+  const response = await api.post(`/api/teams/${teamName}/developers`, developerData)
+  return response.data
+}
+
+export const removeDeveloper = async (teamName, developerName) => {
+  const response = await api.delete(`/api/teams/${teamName}/developers/${developerName}`)
+  return response.data
+}
+
 // Engineer functions
 export const submitEntry = async (entryData) => {
   const response = await api.post('/api/engineer/entry', entryData)
