@@ -3,6 +3,9 @@ import axios from 'axios'
 // Get the API base URL and ensure it's HTTPS in production
 let BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://mnwpivaen5.us-east-1.awsapprunner.com'
 
+// Remove trailing slash to prevent double slashes in URLs
+BASE_URL = BASE_URL.replace(/\/$/, '')
+
 // Force HTTPS in production to prevent Mixed Content errors
 if (window.location.protocol === 'https:' && BASE_URL.startsWith('http://')) {
   console.warn('🚨 Converting HTTP to HTTPS to prevent Mixed Content error')
@@ -81,7 +84,17 @@ export const logout = () => {
 
 // Team management functions
 export const getTeams = async () => {
-  const response = await api.get('/api/teams')
+  console.log('🔍 getTeams called - BASE_URL:', BASE_URL)
+  console.log('🔍 Full URL:', `${BASE_URL}/api/teams`)
+  
+  // Temporary fix: Use absolute HTTPS URL to bypass any baseURL issues
+  const response = await axios.get('https://mnwpivaen5.us-east-1.awsapprunner.com/api/teams', {
+    headers: {
+      'Cache-Control': 'no-cache',
+      'Pragma': 'no-cache',
+      'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+    }
+  })
   return response.data
 }
 
