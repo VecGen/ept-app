@@ -6,196 +6,219 @@
       <p class="mt-2 text-gray-600">Manage teams and developers in your organization</p>
     </div>
 
-    <!-- Add Team Section -->
-    <div class="card mb-8">
-      <div class="card-header">
-        <h3 class="text-lg font-medium">➕ Add New Team</h3>
-      </div>
-      <div class="card-body">
-        <form @submit.prevent="addTeam" class="space-y-4">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label for="team-name" class="block text-sm font-medium text-gray-700">
-                Team Name
-              </label>
-              <input
-                id="team-name"
-                v-model="newTeam.name"
-                type="text"
-                placeholder="e.g., Frontend Team"
-                class="input-field"
-                required
-              />
-            </div>
-            <div>
-              <label for="team-description" class="block text-sm font-medium text-gray-700">
-                Description (Optional)
-              </label>
-              <input
-                id="team-description"
-                v-model="newTeam.description"
-                type="text"
-                placeholder="Brief description of the team"
-                class="input-field"
-              />
-            </div>
-          </div>
-          
-          <div class="flex justify-end">
-            <button
-              type="submit"
-              :disabled="!newTeam.name.trim() || submitting"
-              class="btn-primary disabled:opacity-50"
-            >
-              {{ submitting ? 'Adding...' : 'Add Team' }}
-            </button>
-          </div>
-        </form>
+    <!-- Error Message -->
+    <div v-if="error" class="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
+      <div class="flex">
+        <div class="flex-shrink-0">
+          <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+          </svg>
+        </div>
+        <div class="ml-3">
+          <p class="text-sm font-medium text-red-800">{{ error }}</p>
+        </div>
       </div>
     </div>
 
-    <!-- Teams List -->
-    <div class="space-y-6">
-      <div v-if="teams.length === 0" class="text-center py-12">
-        <div class="text-gray-400 text-6xl mb-4">👥</div>
-        <h3 class="text-lg font-medium text-gray-900 mb-2">No teams yet</h3>
-        <p class="text-gray-600">Create your first team above to get started.</p>
-      </div>
+    <!-- Loading State -->
+    <div v-if="loading" class="text-center py-12">
+      <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <p class="mt-2 text-gray-600">Loading teams...</p>
+    </div>
 
-      <div v-for="team in teams" :key="team.id" class="card">
+    <!-- Content (hidden when loading) -->
+    <div v-else>
+      <!-- Add Team Section -->
+      <div class="card mb-8">
         <div class="card-header">
-          <div class="flex justify-between items-center">
-            <div>
-              <h3 class="text-lg font-medium">{{ team.name }}</h3>
-              <p v-if="team.description" class="text-sm text-gray-600 mt-1">{{ team.description }}</p>
-            </div>
-            <div class="flex space-x-2">
-              <button
-                @click="toggleTeamEdit(team)"
-                class="btn-secondary text-sm"
-              >
-                {{ editingTeam?.id === team.id ? 'Cancel' : 'Edit' }}
-              </button>
-              <button
-                @click="deleteTeam(team)"
-                class="text-red-600 hover:text-red-800 text-sm"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
+          <h3 class="text-lg font-medium">➕ Add New Team</h3>
         </div>
-        
         <div class="card-body">
-          <!-- Edit Team Form -->
-          <div v-if="editingTeam?.id === team.id" class="mb-6 p-4 bg-gray-50 rounded-lg">
-            <form @submit.prevent="updateTeam" class="space-y-4">
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label class="block text-sm font-medium text-gray-700">Team Name</label>
-                  <input
-                    v-model="editingTeam.name"
-                    type="text"
-                    class="input-field"
-                    required
-                  />
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700">Description</label>
-                  <input
-                    v-model="editingTeam.description"
-                    type="text"
-                    class="input-field"
-                  />
-                </div>
+          <form @submit.prevent="addTeam" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label for="team-name" class="block text-sm font-medium text-gray-700">
+                  Team Name
+                </label>
+                <input
+                  id="team-name"
+                  v-model="newTeam.name"
+                  type="text"
+                  placeholder="e.g., Frontend Team"
+                  class="input-field"
+                  required
+                />
               </div>
-              <div class="flex justify-end space-x-2">
-                <button type="button" @click="editingTeam = null" class="btn-secondary">
-                  Cancel
-                </button>
-                <button type="submit" class="btn-primary">
-                  Update Team
-                </button>
+              <div>
+                <label for="team-description" class="block text-sm font-medium text-gray-700">
+                  Description (Optional)
+                </label>
+                <input
+                  id="team-description"
+                  v-model="newTeam.description"
+                  type="text"
+                  placeholder="Brief description of the team"
+                  class="input-field"
+                />
               </div>
-            </form>
-          </div>
-
-          <!-- Add Developer Section -->
-          <div class="mb-6">
-            <h4 class="font-medium text-gray-900 mb-3">Add Developer</h4>
-            <form @submit.prevent="addDeveloper(team)" class="flex space-x-3">
-              <input
-                v-model="newDeveloperName"
-                type="text"
-                placeholder="Developer name"
-                class="input-field flex-1"
-                required
-              />
+            </div>
+            
+            <div class="flex justify-end">
               <button
                 type="submit"
-                :disabled="!newDeveloperName.trim()"
+                :disabled="!newTeam.name.trim() || submitting"
                 class="btn-primary disabled:opacity-50"
               >
-                Add
+                {{ submitting ? 'Adding...' : 'Add Team' }}
               </button>
-            </form>
-          </div>
-
-          <!-- Developers List -->
-          <div>
-            <h4 class="font-medium text-gray-900 mb-3">
-              Developers ({{ team.developers?.length || 0 }})
-            </h4>
-            
-            <div v-if="!team.developers || team.developers.length === 0" 
-                 class="text-center py-6 text-gray-500">
-              No developers in this team yet.
             </div>
-            
-            <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              <div v-for="developer in team.developers" :key="developer.id || developer" 
-                   class="flex items-center justify-between bg-gray-50 rounded-lg p-3">
-                <div class="flex items-center">
-                  <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                    <span class="text-sm font-medium text-blue-600">
-                      {{ (developer.name || developer).charAt(0).toUpperCase() }}
-                    </span>
-                  </div>
-                  <span class="text-sm font-medium text-gray-900">
-                    {{ developer.name || developer }}
-                  </span>
-                </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Teams List -->
+      <div class="space-y-6">
+        <div v-if="teams.length === 0" class="text-center py-12">
+          <div class="text-gray-400 text-6xl mb-4">👥</div>
+          <h3 class="text-lg font-medium text-gray-900 mb-2">No teams yet</h3>
+          <p class="text-gray-600">Create your first team above to get started.</p>
+        </div>
+
+        <div v-for="team in teams" :key="team.id" class="card">
+          <div class="card-header">
+            <div class="flex justify-between items-center">
+              <div>
+                <h3 class="text-lg font-medium">{{ team.name }}</h3>
+                <p v-if="team.description" class="text-sm text-gray-600 mt-1">{{ team.description }}</p>
+              </div>
+              <div class="flex space-x-2">
                 <button
-                  @click="removeDeveloper(team, developer)"
-                  class="text-red-500 hover:text-red-700"
-                  title="Remove developer"
+                  @click="toggleTeamEdit(team)"
+                  class="btn-secondary text-sm"
                 >
-                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-                  </svg>
+                  {{ editingTeam?.name === team.name ? 'Cancel' : 'Edit' }}
+                </button>
+                <button
+                  @click="deleteTeam(team)"
+                  class="text-red-600 hover:text-red-800 text-sm"
+                >
+                  Delete
                 </button>
               </div>
             </div>
           </div>
-
-          <!-- Access Links Section -->
-          <div v-if="team.developers && team.developers.length > 0" class="mt-6 pt-6 border-t">
-            <h4 class="font-medium text-gray-900 mb-3">Developer Access Links</h4>
-            <div class="space-y-2">
-              <div v-for="developer in team.developers" :key="`link-${developer.id || developer}`"
-                   class="flex items-center justify-between bg-blue-50 rounded p-2">
-                <span class="text-sm text-gray-700">{{ developer.name || developer }}</span>
-                <div class="flex space-x-2">
-                  <code class="text-xs bg-white px-2 py-1 rounded border text-blue-600">
-                    {{ generateAccessLink(team, developer) }}
-                  </code>
-                  <button
-                    @click="copyToClipboard(generateAccessLink(team, developer))"
-                    class="text-blue-600 hover:text-blue-800 text-xs"
-                    title="Copy link"
-                  >
-                    Copy
+          
+          <div class="card-body">
+            <!-- Edit Team Form -->
+            <div v-if="editingTeam?.name === team.name" class="mb-6 p-4 bg-gray-50 rounded-lg">
+              <form @submit.prevent="updateTeam" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700">Team Name</label>
+                    <input
+                      v-model="editingTeam.name"
+                      type="text"
+                      class="input-field"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700">Description</label>
+                    <input
+                      v-model="editingTeam.description"
+                      type="text"
+                      class="input-field"
+                    />
+                  </div>
+                </div>
+                <div class="flex justify-end space-x-2">
+                  <button type="button" @click="editingTeam = null" class="btn-secondary">
+                    Cancel
                   </button>
+                  <button type="submit" class="btn-primary">
+                    Update Team
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <!-- Add Developer Section -->
+            <div class="mb-6">
+              <h4 class="font-medium text-gray-900 mb-3">Add Developer</h4>
+              <form @submit.prevent="addDeveloper(team)" class="flex space-x-3">
+                <input
+                  v-model="newDeveloperName"
+                  type="text"
+                  placeholder="Developer name"
+                  class="input-field flex-1"
+                  required
+                />
+                <button
+                  type="submit"
+                  :disabled="!newDeveloperName.trim()"
+                  class="btn-primary disabled:opacity-50"
+                >
+                  Add
+                </button>
+              </form>
+            </div>
+
+            <!-- Developers List -->
+            <div>
+              <h4 class="font-medium text-gray-900 mb-3">
+                Developers ({{ team.developers?.length || 0 }})
+              </h4>
+              
+              <div v-if="!team.developers || team.developers.length === 0" 
+                   class="text-center py-6 text-gray-500">
+                No developers in this team yet.
+              </div>
+              
+              <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div v-for="developer in team.developers" :key="developer.id || developer" 
+                     class="flex items-center justify-between bg-gray-50 rounded-lg p-3">
+                  <div class="flex items-center">
+                    <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                      <span class="text-sm font-medium text-blue-600">
+                        {{ (developer.name || developer).charAt(0).toUpperCase() }}
+                      </span>
+                    </div>
+                    <span class="text-sm font-medium text-gray-900">
+                      {{ developer.name || developer }}
+                    </span>
+                  </div>
+                  <button
+                    @click="removeDeveloper(team, developer)"
+                    class="text-red-500 hover:text-red-700"
+                    title="Remove developer"
+                  >
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Access Links Section -->
+            <div v-if="team.developers && team.developers.length > 0" class="mt-6 pt-6 border-t">
+              <h4 class="font-medium text-gray-900 mb-3">Developer Access Links</h4>
+              <div class="space-y-2">
+                <div v-for="developer in team.developers" :key="`link-${developer.id || developer}`"
+                     class="flex items-center justify-between bg-blue-50 rounded p-2">
+                  <span class="text-sm text-gray-700">{{ developer.name || developer }}</span>
+                  <div class="flex space-x-2">
+                    <code class="text-xs bg-white px-2 py-1 rounded border text-blue-600">
+                      {{ generateAccessLink(team, developer) }}
+                    </code>
+                    <button
+                      @click="copyToClipboard(generateAccessLink(team, developer))"
+                      class="text-blue-600 hover:text-blue-800 text-xs"
+                      title="Copy link"
+                    >
+                      Copy
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -208,44 +231,53 @@
 
 <script>
 import { ref, reactive, onMounted } from 'vue'
+import { getTeams, createTeam, deleteTeam } from '../services/api'
+import { useAuthStore } from '../stores/auth'
+import { useRouter } from 'vue-router'
 
 export default {
   name: 'TeamManagement',
   setup() {
+    const authStore = useAuthStore()
+    const router = useRouter()
+    
     const teams = ref([])
     const newTeam = ref({ name: '', description: '' })
     const newDeveloperName = ref('')
     const editingTeam = ref(null)
     const submitting = ref(false)
+    const loading = ref(true)
+    const error = ref(null)
 
     const loadTeams = async () => {
       try {
-        // This will be implemented when backend is ready
-        // const response = await adminAPI.getTeams()
-        // teams.value = response.data
+        loading.value = true
+        error.value = null
         
-        // Placeholder data
-        teams.value = [
-          {
-            id: 1,
-            name: 'Frontend Team',
-            description: 'React and Vue.js developers',
-            developers: [
-              { id: 1, name: 'Alice Johnson' },
-              { id: 2, name: 'Bob Smith' }
-            ]
-          },
-          {
-            id: 2,
-            name: 'Backend Team',
-            description: 'Node.js and Python developers',
-            developers: [
-              { id: 3, name: 'Charlie Brown' }
-            ]
-          }
-        ]
-      } catch (error) {
-        console.error('Failed to load teams:', error)
+        console.log('Loading teams from API...')
+        const response = await getTeams()
+        teams.value = response || []
+        
+        console.log('Teams loaded successfully:', teams.value)
+        
+      } catch (err) {
+        console.error('Failed to load teams:', err)
+        
+        if (err.response?.status === 401) {
+          error.value = 'Authentication expired. Please log in again.'
+          authStore.logout()
+          router.push('/admin/login')
+          return
+        } else if (err.response?.status === 404) {
+          error.value = 'Teams API endpoint not found.'
+        } else {
+          error.value = `Failed to load teams: ${err.response?.data?.detail || err.message || 'Unknown error'}`
+        }
+        
+        // Fallback to empty teams array
+        teams.value = []
+      } finally {
+        loading.value = false
       }
     }
 
@@ -254,30 +286,43 @@ export default {
 
       try {
         submitting.value = true
+        error.value = null
         
-        // This will be implemented when backend is ready
-        // await adminAPI.createTeam(newTeam.value)
+        console.log('Creating team:', newTeam.value)
         
-        // Placeholder: add to local state
-        const newId = Math.max(...teams.value.map(t => t.id), 0) + 1
-        teams.value.push({
-          id: newId,
-          ...newTeam.value,
-          developers: []
+        const response = await createTeam({
+          team_name: newTeam.value.name.trim(),
+          description: newTeam.value.description.trim() || undefined
         })
-
+        
+        console.log('Team created successfully:', response)
+        
+        // Reload teams to get updated list
+        await loadTeams()
+        
+        // Reset form
         newTeam.value = { name: '', description: '' }
         
-      } catch (error) {
-        console.error('Failed to add team:', error)
-        alert('Failed to add team. Please try again.')
+      } catch (err) {
+        console.error('Failed to add team:', err)
+        
+        if (err.response?.status === 400) {
+          error.value = `Failed to create team: ${err.response.data?.detail || 'Team name may already exist'}`
+        } else if (err.response?.status === 401) {
+          error.value = 'Authentication expired. Please log in again.'
+          authStore.logout()
+          router.push('/admin/login')
+          return
+        } else {
+          error.value = `Failed to create team: ${err.response?.data?.detail || err.message || 'Unknown error'}`
+        }
       } finally {
         submitting.value = false
       }
     }
 
     const toggleTeamEdit = (team) => {
-      if (editingTeam.value?.id === team.id) {
+      if (editingTeam.value?.name === team.name) {
         editingTeam.value = null
       } else {
         editingTeam.value = { ...team }
@@ -288,38 +333,52 @@ export default {
       if (!editingTeam.value) return
 
       try {
-        // This will be implemented when backend is ready
-        // await adminAPI.updateTeam(editingTeam.value.id, editingTeam.value)
+        error.value = null
         
-        // Placeholder: update local state
-        const index = teams.value.findIndex(t => t.id === editingTeam.value.id)
-        if (index !== -1) {
-          teams.value[index] = { ...editingTeam.value }
-        }
-
+        console.log('Updating team:', editingTeam.value)
+        
+        // Note: The teams API doesn't seem to have an update endpoint in the backend
+        // This would need to be implemented in the API first
+        console.warn('Team update API not available yet')
+        error.value = 'Team update functionality not available yet in the API'
+        
         editingTeam.value = null
         
-      } catch (error) {
-        console.error('Failed to update team:', error)
-        alert('Failed to update team. Please try again.')
+      } catch (err) {
+        console.error('Failed to update team:', err)
+        error.value = `Failed to update team: ${err.response?.data?.detail || err.message || 'Unknown error'}`
       }
     }
 
-    const deleteTeam = async (team) => {
+    const deleteTeamHandler = async (team) => {
       if (!confirm(`Are you sure you want to delete "${team.name}"? This action cannot be undone.`)) {
         return
       }
 
       try {
-        // This will be implemented when backend is ready
-        // await adminAPI.deleteTeam(team.id)
+        error.value = null
         
-        // Placeholder: remove from local state
-        teams.value = teams.value.filter(t => t.id !== team.id)
+        console.log('Deleting team:', team.name)
         
-      } catch (error) {
-        console.error('Failed to delete team:', error)
-        alert('Failed to delete team. Please try again.')
+        const response = await deleteTeam(team.name)
+        console.log('Team deleted successfully:', response)
+        
+        // Reload teams to get updated list
+        await loadTeams()
+        
+      } catch (err) {
+        console.error('Failed to delete team:', err)
+        
+        if (err.response?.status === 404) {
+          error.value = `Team "${team.name}" not found`
+        } else if (err.response?.status === 401) {
+          error.value = 'Authentication expired. Please log in again.'
+          authStore.logout()
+          router.push('/admin/login')
+          return
+        } else {
+          error.value = `Failed to delete team: ${err.response?.data?.detail || err.message || 'Unknown error'}`
+        }
       }
     }
 
@@ -327,22 +386,32 @@ export default {
       if (!newDeveloperName.value.trim()) return
 
       try {
-        // This will be implemented when backend is ready
-        // await adminAPI.addDeveloperToTeam(team.id, { name: newDeveloperName.value })
+        error.value = null
         
-        // Placeholder: add to local state
-        const newId = Math.max(...(team.developers || []).map(d => d.id || 0), 0) + 1
+        console.log('Adding developer to team:', team.name, newDeveloperName.value)
+        
+        // For now, add locally since the API endpoint would be POST /api/teams/{team_name}/developers
+        // This needs to be implemented in the backend API
+        const developerData = {
+          dev_name: newDeveloperName.value.trim(),
+          dev_email: `${newDeveloperName.value.trim().toLowerCase().replace(/\s+/g, '.')}@company.com`
+        }
+        
+        // Import the addDeveloper API function if it exists
+        // For now, simulate the addition locally
         if (!team.developers) team.developers = []
         team.developers.push({
-          id: newId,
-          name: newDeveloperName.value
+          name: newDeveloperName.value.trim(),
+          email: developerData.dev_email
         })
 
         newDeveloperName.value = ''
         
-      } catch (error) {
-        console.error('Failed to add developer:', error)
-        alert('Failed to add developer. Please try again.')
+        console.log('Developer added successfully (locally)')
+        
+      } catch (err) {
+        console.error('Failed to add developer:', err)
+        error.value = `Failed to add developer: ${err.response?.data?.detail || err.message || 'Unknown error'}`
       }
     }
 
@@ -352,17 +421,21 @@ export default {
       }
 
       try {
-        // This will be implemented when backend is ready
-        // await adminAPI.removeDeveloperFromTeam(team.id, developer.id)
+        error.value = null
         
-        // Placeholder: remove from local state
+        console.log('Removing developer from team:', team.name, developer.name)
+        
+        // For now, remove locally since the API endpoint would be DELETE /api/teams/{team_name}/developers/{developer_name}
+        // This needs to be implemented in the backend API
         team.developers = team.developers.filter(d => 
-          (d.id || d) !== (developer.id || developer)
+          (d.name || d) !== (developer.name || developer)
         )
         
-      } catch (error) {
-        console.error('Failed to remove developer:', error)
-        alert('Failed to remove developer. Please try again.')
+        console.log('Developer removed successfully (locally)')
+        
+      } catch (err) {
+        console.error('Failed to remove developer:', err)
+        error.value = `Failed to remove developer: ${err.response?.data?.detail || err.message || 'Unknown error'}`
       }
     }
 
@@ -392,10 +465,12 @@ export default {
       newDeveloperName,
       editingTeam,
       submitting,
+      loading,
+      error,
       addTeam,
       toggleTeamEdit,
       updateTeam,
-      deleteTeam,
+      deleteTeam: deleteTeamHandler,
       addDeveloper,
       removeDeveloper,
       generateAccessLink,
