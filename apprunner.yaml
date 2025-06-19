@@ -26,8 +26,6 @@ run:
   runtime-version: 22.16.0
   pre-run:
     - echo "Building application with environment variables:"
-    - echo "VITE_API_BASE_URL=$VITE_API_BASE_URL"
-    - echo "NODE_ENV=$NODE_ENV"
     - npx vite build
     - echo "Application built successfully"
   command: npm run serve
