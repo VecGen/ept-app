@@ -8,6 +8,18 @@
       </div>
     </div>
 
+    <!-- Error Message -->
+    <div v-if="error" class="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+      <div class="flex">
+        <div class="flex-shrink-0">
+          <span class="text-red-500 text-lg">⚠️</span>
+        </div>
+        <div class="ml-3">
+          <p class="text-sm text-red-800">{{ error }}</p>
+        </div>
+      </div>
+    </div>
+
     <!-- Quick Stats -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
       <div class="stat-card">
@@ -115,6 +127,7 @@
 <script>
 import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '../stores/auth'
+import { getEngineerDashboard } from '../services/api'
 
 export default {
   name: 'EngineerDashboard',
@@ -123,12 +136,13 @@ export default {
     const showAnalytics = ref(false)
     const entries = ref([])
     const loading = ref(true)
+    const error = ref(null)
 
     const userName = computed(() => authStore.userData?.developer_name || 'Engineer')
     const teamName = computed(() => authStore.userData?.team_name || 'Unknown Team')
 
     const totalTimeSaved = computed(() => {
-      return entries.value.reduce((sum, entry) => sum + (entry.efficiencyGained || 0), 0)
+      return entries.value.reduce((sum, entry) => sum + (entry.efficiencyGained || entry.efficiency_gained || 0), 0)
     })
 
     const totalEntries = computed(() => entries.value.length)
@@ -139,8 +153,8 @@ export default {
       startOfWeek.setHours(0, 0, 0, 0)
       
       return entries.value
-        .filter(entry => new Date(entry.weekStart) >= startOfWeek)
-        .reduce((sum, entry) => sum + (entry.efficiencyGained || 0), 0)
+        .filter(entry => new Date(entry.weekStart || entry.week_start) >= startOfWeek)
+        .reduce((sum, entry) => sum + (entry.efficiencyGained || entry.efficiency_gained || 0), 0)
     })
 
     const categoryData = computed(() => {
@@ -150,7 +164,7 @@ export default {
         if (!categories[cat]) {
           categories[cat] = 0
         }
-        categories[cat] += entry.efficiencyGained || 0
+        categories[cat] += entry.efficiencyGained || entry.efficiency_gained || 0
       })
       
       return Object.entries(categories)
@@ -160,7 +174,7 @@ export default {
 
     const recentEntries = computed(() => {
       return [...entries.value]
-        .sort((a, b) => new Date(b.weekStart) - new Date(a.weekStart))
+        .sort((a, b) => new Date(b.weekStart || b.week_start) - new Date(a.weekStart || a.week_start))
         .slice(0, 5)
     })
 
@@ -171,12 +185,33 @@ export default {
     const loadEntries = async () => {
       try {
         loading.value = true
-        // This will be implemented when backend is ready
-        // const response = await engineerAPI.getEntries()
-        // entries.value = response.data
-        entries.value = [] // Placeholder
-      } catch (error) {
-        console.error('Failed to load entries:', error)
+        error.value = null
+        
+        console.log('Loading engineer dashboard data...')
+        const response = await getEngineerDashboard()
+        console.log('Engineer dashboard response:', response)
+        
+        // Handle different possible response structures
+        entries.value = response.entries || response.recent_entries || []
+        
+        console.log('Engineer dashboard data loaded successfully')
+        
+      } catch (err) {
+        console.error('Failed to load engineer dashboard:', err)
+        
+        if (err.response?.status === 401) {
+          error.value = 'Authentication expired. Please log in again.'
+          authStore.logout()
+          return
+        } else if (err.response?.status === 404) {
+          error.value = 'Engineer dashboard endpoint not found.'
+        } else {
+          error.value = `Failed to load dashboard data: ${err.response?.data?.detail || err.message || 'Unknown error'}`
+        }
+        
+        // Fallback to empty data instead of static data
+        entries.value = []
+        
       } finally {
         loading.value = false
       }
@@ -196,7 +231,8 @@ export default {
       categoryData,
       recentEntries,
       formatDate,
-      loading
+      loading,
+      error
     }
   }
 }

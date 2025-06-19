@@ -6,6 +6,18 @@
       <p class="mt-2 text-gray-600">Export data, manage entries, and generate reports</p>
     </div>
 
+    <!-- Error Message -->
+    <div v-if="error" class="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+      <div class="flex">
+        <div class="flex-shrink-0">
+          <span class="text-red-500 text-lg">⚠️</span>
+        </div>
+        <div class="ml-3">
+          <p class="text-sm text-red-800">{{ error }}</p>
+        </div>
+      </div>
+    </div>
+
     <!-- Export Section -->
     <div class="card mb-8">
       <div class="card-header">
@@ -295,7 +307,8 @@
 </template>
 
 <script>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { getTeams, getAdminDashboard } from '../services/api'
 
 export default {
   name: 'DataManagement',
@@ -325,68 +338,71 @@ export default {
     const currentPage = ref(1)
     const entriesPerPage = 10
     const exporting = ref(false)
+    const loading = ref(true)
+    const error = ref(null)
 
     const filteredEntries = ref([])
-
     const paginatedEntries = ref([])
 
     const loadData = async () => {
       try {
+        loading.value = true
+        error.value = null
+        
+        console.log('Loading data management data...')
+        
         // Load teams
-        // const teamsResponse = await adminAPI.getTeams()
-        // teams.value = teamsResponse.data
+        const teamsResponse = await getTeams()
+        teams.value = teamsResponse.teams || teamsResponse || []
         
-        // Load entries
-        // const entriesResponse = await dataAPI.getAllEntries()
-        // entries.value = entriesResponse.data
-        
-        // Placeholder data
-        teams.value = [
-          { id: 1, name: 'Frontend Team' },
-          { id: 2, name: 'Backend Team' },
-          { id: 3, name: 'Platform Team' }
-        ]
-        
-        entries.value = [
-          {
-            id: 1,
-            developerName: 'Alice Johnson',
-            teamName: 'Frontend Team',
-            storyId: 'ENG-1542',
-            category: 'Feature Development',
-            originalEstimate: 8.0,
-            efficiencyGained: 2.5,
-            copilotUsed: 'Yes',
-            efficiencyAreas: ['Code Generation', 'API Design'],
-            notes: 'Copilot helped with API endpoint generation',
-            weekStart: '2024-01-08',
-            createdAt: '2024-01-12T10:30:00Z'
-          },
-          {
-            id: 2,
-            developerName: 'Bob Smith',
-            teamName: 'Backend Team',
-            storyId: 'ENG-1543',
-            category: 'Bug Fixes',
-            originalEstimate: 4.0,
-            efficiencyGained: 1.5,
-            copilotUsed: 'Yes',
-            efficiencyAreas: ['Debugging', 'Code Analysis'],
-            notes: 'Copilot suggested the root cause quickly',
-            weekStart: '2024-01-01',
-            createdAt: '2024-01-05T15:20:00Z'
+        // Try to load dashboard data for overall stats
+        try {
+          const dashboardResponse = await getAdminDashboard()
+          
+          // Extract entries if available in dashboard response
+          entries.value = dashboardResponse.recent_activity || dashboardResponse.entries || []
+          
+          // Calculate stats from dashboard or teams data
+          stats.value = {
+            totalEntries: dashboardResponse.total_entries || entries.value.length || 0,
+            totalHoursSaved: dashboardResponse.total_hours_saved || dashboardResponse.total_time_saved || 0,
+            activeTeams: teams.value.length
           }
-        ]
-        
-        // Calculate stats
-        stats.value = {
-          totalEntries: entries.value.length,
-          totalHoursSaved: entries.value.reduce((sum, entry) => sum + entry.efficiencyGained, 0),
-          activeTeams: teams.value.length
+        } catch (dashboardError) {
+          console.warn('Dashboard data not available, using team data only:', dashboardError.response?.status)
+          // If dashboard fails, just use teams data
+          stats.value = {
+            totalEntries: 0,
+            totalHoursSaved: 0,
+            activeTeams: teams.value.length
+          }
         }
         
-      } catch (error) {
-        console.error('Failed to load data:', error)
+        console.log('Data management data loaded successfully')
+        
+      } catch (err) {
+        console.error('Failed to load data:', err)
+        
+        if (err.response?.status === 401) {
+          error.value = 'Authentication expired. Please log in again.'
+          return
+        } else if (err.response?.status === 404) {
+          error.value = 'Data management endpoints not found.'
+        } else {
+          error.value = `Failed to load data: ${err.response?.data?.detail || err.message || 'Unknown error'}`
+        }
+        
+        // Fallback to empty data
+        teams.value = []
+        entries.value = []
+        stats.value = {
+          totalEntries: 0,
+          totalHoursSaved: 0,
+          activeTeams: 0
+        }
+        
+      } finally {
+        loading.value = false
       }
     }
 
@@ -458,6 +474,8 @@ export default {
       currentPage,
       entriesPerPage,
       exporting,
+      loading,
+      error,
       filteredEntries,
       paginatedEntries,
       exportData,
