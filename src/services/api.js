@@ -1,14 +1,22 @@
 import axios from 'axios'
 
-// Use HTTPS fallback instead of HTTP to prevent Mixed Content errors
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://mnwpivaen5.us-east-1.awsapprunner.com'
+// Get the API base URL and ensure it's HTTPS in production
+let BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://mnwpivaen5.us-east-1.awsapprunner.com'
+
+// Force HTTPS in production to prevent Mixed Content errors
+if (window.location.protocol === 'https:' && BASE_URL.startsWith('http://')) {
+  console.warn('🚨 Converting HTTP to HTTPS to prevent Mixed Content error')
+  BASE_URL = BASE_URL.replace('http://', 'https://')
+}
 
 // Debug logging to see what URL is being used
 console.log('🔧 API Configuration:', {
   VITE_API_BASE_URL: import.meta.env.VITE_API_BASE_URL,
   BASE_URL: BASE_URL,
   NODE_ENV: import.meta.env.NODE_ENV,
-  MODE: import.meta.env.MODE
+  MODE: import.meta.env.MODE,
+  location_protocol: window.location.protocol,
+  location_href: window.location.href
 })
 
 // Create axios instance

@@ -1,5 +1,16 @@
 <template>
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Debug Information -->
+    <div class="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
+      <h4 class="font-medium text-yellow-800">🔧 Debug Info</h4>
+      <div class="text-sm text-yellow-700 mt-1">
+        <p>VITE_API_BASE_URL: <code>{{ import.meta.env.VITE_API_BASE_URL || 'undefined' }}</code></p>
+        <p>Computed BASE_URL: <code>{{ debugApiUrl }}</code></p>
+        <p>NODE_ENV: <code>{{ import.meta.env.NODE_ENV }}</code></p>
+        <p>MODE: <code>{{ import.meta.env.MODE }}</code></p>
+      </div>
+    </div>
+
     <!-- Header -->
     <div class="mb-8">
       <h1 class="text-3xl font-bold text-gray-900">👥 Team Management</h1>
@@ -230,7 +241,7 @@
 </template>
 
 <script>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { getTeams, createTeam, deleteTeam } from '../services/api'
 import { useAuthStore } from '../stores/auth'
 import { useRouter } from 'vue-router'
@@ -248,6 +259,11 @@ export default {
     const submitting = ref(false)
     const loading = ref(true)
     const error = ref(null)
+
+    // Debug computed property to show actual API URL
+    const debugApiUrl = computed(() => {
+      return import.meta.env.VITE_API_BASE_URL || 'https://mnwpivaen5.us-east-1.awsapprunner.com'
+    })
 
     const loadTeams = async () => {
       try {
@@ -474,7 +490,8 @@ export default {
       addDeveloper,
       removeDeveloper,
       generateAccessLink,
-      copyToClipboard
+      copyToClipboard,
+      debugApiUrl
     }
   }
 }
