@@ -362,21 +362,27 @@ export default {
         const dashboardResponse = await getAdminDashboard()
         console.log('Dashboard response:', dashboardResponse)
         
-        // Load overall analytics
-        const analyticsResponse = await getOverallAnalytics({
-          start_date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 days ago
-          end_date: new Date().toISOString().split('T')[0] // today
-        })
-        console.log('Analytics response:', analyticsResponse)
+        // Try to load overall analytics (gracefully handle if endpoint doesn't exist)
+        let analyticsResponse = null
+        try {
+          analyticsResponse = await getOverallAnalytics({
+            start_date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 days ago
+            end_date: new Date().toISOString().split('T')[0] // today
+          })
+          console.log('Analytics response:', analyticsResponse)
+        } catch (analyticsError) {
+          console.warn('Analytics endpoint not available yet:', analyticsError.response?.status)
+          // Continue without analytics data - will use fallback values
+        }
         
-        // Update analytics with real data
+        // Update analytics with real data (with fallbacks for missing analytics)
         analytics.value = {
-          totalHoursSaved: analyticsResponse.total_hours_saved || 0,
-          totalEntries: analyticsResponse.total_entries || 0,
+          totalHoursSaved: analyticsResponse?.total_hours_saved || analyticsResponse?.total_time_saved || 0,
+          totalEntries: analyticsResponse?.total_entries || 0,
           activeTeams: dashboardResponse.active_teams || 0,
           activeDevelopers: dashboardResponse.active_developers || 0,
-          teamStats: analyticsResponse.team_stats || [],
-          copilotUsage: analyticsResponse.copilot_usage || {
+          teamStats: analyticsResponse?.team_stats || [],
+          copilotUsage: analyticsResponse?.copilot_usage || {
             withCopilot: 0,
             withoutCopilot: 0,
             total: 0
@@ -387,7 +393,7 @@ export default {
         recentActivity.value = dashboardResponse.recent_activity || []
         
         // Set top categories from API
-        topCategories.value = analyticsResponse.top_categories || []
+        topCategories.value = analyticsResponse?.top_categories || []
         
         console.log('Dashboard data loaded successfully')
         
