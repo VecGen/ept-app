@@ -180,7 +180,17 @@ export default {
     })
 
     const thisWeekSaved = computed(() => {
-      return dashboardStats.value.this_week_saved || 0
+      // Calculate this week's savings from entries since API doesn't provide it
+      const now = new Date()
+      const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay() + 1))
+      startOfWeek.setHours(0, 0, 0, 0)
+      
+      return entries.value
+        .filter(entry => {
+          const entryDate = new Date(entry.Week || entry.week_start)
+          return entryDate >= startOfWeek
+        })
+        .reduce((sum, entry) => sum + (entry.Efficiency_Gained_Hours || 0), 0)
     })
 
     const averageEfficiency = computed(() => {
@@ -204,13 +214,13 @@ export default {
 
     const recentEntries = computed(() => {
       return [...entries.value]
-        .sort((a, b) => new Date(b.Week_Start || b.week_start) - new Date(a.Week_Start || a.week_start))
+        .sort((a, b) => new Date(b.Week || b.week_start) - new Date(a.Week || a.week_start))
         .slice(0, 5)
         .map(entry => ({
           id: entry.Story_ID || entry.story_id || Math.random().toString(36),
           storyId: entry.Story_ID || entry.story_id,
           category: entry.Category || entry.category,
-          weekStart: entry.Week_Start || entry.week_start,
+          weekStart: entry.Week || entry.week_start,
           efficiencyGained: entry.Efficiency_Gained_Hours || entry.efficiency_gained || 0,
           copilotUsed: entry.Copilot_Used === 'Yes' || entry.copilot_used === 'Yes'
         }))
@@ -246,13 +256,20 @@ export default {
         const data = await response.json()
         console.log('Engineer dashboard response:', data)
         
-        // Store dashboard stats
-        dashboardStats.value = data.stats || {}
+        // API returns data directly at root level, not nested
+        dashboardStats.value = {
+          total_time_saved: data.total_time_saved || 0,
+          total_entries: data.total_entries || 0,
+          average_efficiency: data.average_efficiency || 0
+        }
         
-        // Store entries for category analysis
-        entries.value = data.entries || []
+        // Store recent entries for category analysis and recent entries display
+        entries.value = data.recent_entries || []
         
-        console.log('Engineer dashboard data loaded successfully')
+        console.log('Engineer dashboard data loaded successfully:', {
+          stats: dashboardStats.value,
+          entriesCount: entries.value.length
+        })
         
       } catch (err) {
         console.error('Failed to load engineer dashboard:', err)
