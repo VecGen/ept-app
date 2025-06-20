@@ -37,6 +37,22 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
+    
+    // Debug logging for teams endpoint
+    if (config.url === '/api/teams') {
+      console.log('🚀 Making request to /api/teams')
+      console.log('  - Method:', config.method?.toUpperCase())
+      console.log('  - Base URL:', config.baseURL)
+      console.log('  - Full URL:', `${config.baseURL}${config.url}`)
+      console.log('  - Headers:', {
+        'Content-Type': config.headers['Content-Type'],
+        'Authorization': config.headers.Authorization ? config.headers.Authorization.substring(0, 20) + '...' : 'NONE',
+        'Cache-Control': config.headers['Cache-Control'],
+        'Pragma': config.headers['Pragma']
+      })
+      console.log('  - Token from localStorage:', token ? token.substring(0, 50) + '...' : 'NONE')
+    }
+    
     return config
   },
   (error) => {

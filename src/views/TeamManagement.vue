@@ -9,6 +9,26 @@
         <p>NODE_ENV: <code>{{ nodeEnv }}</code></p>
         <p>MODE: <code>{{ mode }}</code></p>
       </div>
+      <div class="mt-2">
+        <button
+          @click="setWorkingToken"
+          class="px-3 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600"
+        >
+          🔧 Set Working Token from Curl
+        </button>
+        <button
+          @click="debugCurrentToken"
+          class="ml-2 px-3 py-1 bg-green-500 text-white text-xs rounded hover:bg-green-600"
+        >
+          🔍 Debug Current Token
+        </button>
+        <button
+          @click="testCurlRequest"
+          class="ml-2 px-3 py-1 bg-purple-500 text-white text-xs rounded hover:bg-purple-600"
+        >
+          🧪 Test Curl Request
+        </button>
+      </div>
     </div>
 
     <!-- Header -->
@@ -283,6 +303,24 @@ export default {
         error.value = null
         
         console.log('Loading teams from API...')
+        
+        // Debug: Log the token being used
+        const currentToken = localStorage.getItem('auth_token')
+        console.log('🔑 Current token in localStorage:', currentToken ? currentToken.substring(0, 50) + '...' : 'NO TOKEN')
+        console.log('🔑 Auth store token:', authStore.token ? authStore.token.substring(0, 50) + '...' : 'NO TOKEN')
+        console.log('🔑 Auth store isAuthenticated:', authStore.isAuthenticated)
+        console.log('🔑 Auth store userType:', authStore.userType)
+        
+        // Debug: Compare with working token from curl
+        const workingToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX3R5cGUiOiJhZG1pbiIsInN1YiI6ImFkbWluIiwiZXhwIjoxNzUwNDMxNDI0fQ.c1fGmqjGdFDVb2AjmNqiyccIaPFkFPtFzzjkrhE3Ing'
+        if (currentToken === workingToken) {
+          console.log('✅ Token matches working curl token')
+        } else {
+          console.log('❌ Token DOES NOT match working curl token')
+          console.log('Expected (curl):', workingToken.substring(0, 50) + '...')
+          console.log('Actual (browser):', currentToken ? currentToken.substring(0, 50) + '...' : 'NO TOKEN')
+        }
+        
         const response = await getTeams()
         teams.value = response || []
         
@@ -290,6 +328,13 @@ export default {
         
       } catch (err) {
         console.error('Failed to load teams:', err)
+        
+        // Enhanced error logging
+        console.log('❌ Error details:')
+        console.log('  - Status:', err.response?.status)
+        console.log('  - Data:', err.response?.data)
+        console.log('  - Headers:', err.response?.headers)
+        console.log('  - Config:', err.config)
         
         if (err.response?.status === 401) {
           error.value = 'Authentication expired. Please log in again.'
@@ -483,6 +528,83 @@ export default {
       }
     }
 
+    const setWorkingToken = () => {
+      const workingToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX3R5cGUiOiJhZG1pbiIsInN1YiI6ImFkbWluIiwiZXhwIjoxNzUwNDMxNDI0fQ.c1fGmqjGdFDVb2AjmNqiyccIaPFkFPtFzzjkrhE3Ing'
+      
+      // Set token in localStorage
+      localStorage.setItem('auth_token', workingToken)
+      localStorage.setItem('user_type', 'admin')
+      
+      // Update auth store
+      authStore.token = workingToken
+      authStore.userType = 'admin'
+      authStore.isAuthenticated = true
+      authStore.user = { type: 'admin' }
+      
+      console.log('✅ Working token set successfully!')
+      alert('Working token from curl has been set. Try loading teams now.')
+      
+      // Automatically retry loading teams
+      loadTeams()
+    }
+
+    const debugCurrentToken = () => {
+      const currentToken = localStorage.getItem('auth_token')
+      const userType = localStorage.getItem('user_type')
+      
+      console.log('=== TOKEN DEBUG INFO ===')
+      console.log('localStorage auth_token:', currentToken)
+      console.log('localStorage user_type:', userType)
+      console.log('authStore.token:', authStore.token)
+      console.log('authStore.userType:', authStore.userType)
+      console.log('authStore.isAuthenticated:', authStore.isAuthenticated)
+      
+      const workingToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX3R5cGUiOiJhZG1pbiIsInN1YiI6ImFkbWluIiwiZXhwIjoxNzUwNDMxNDI0fQ.c1fGmqjGdFDVb2AjmNqiyccIaPFkFPtFzzjkrhE3Ing'
+      console.log('Working token (curl):', workingToken)
+      console.log('Tokens match:', currentToken === workingToken)
+      
+      // Show in alert for easy viewing
+      alert(`Current token: ${currentToken ? currentToken.substring(0, 50) + '...' : 'NONE'}\n\nAuth store: ${authStore.isAuthenticated ? 'Authenticated' : 'Not authenticated'}\n\nUser type: ${authStore.userType || 'None'}`)
+    }
+
+    const testCurlRequest = async () => {
+      console.log('🧪 Testing exact curl request...')
+      
+      const workingToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX3R5cGUiOiJhZG1pbiIsInN1YiI6ImFkbWluIiwiZXhwIjoxNzUwNDMxNDI0fQ.c1fGmqjGdFDVb2AjmNqiyccIaPFkFPtFzzjkrhE3Ing'
+      const url = 'https://mnwpivaen5.us-east-1.awsapprunner.com/api/teams'
+      
+      try {
+        console.log('Making direct fetch request...')
+        console.log('URL:', url)
+        console.log('Authorization header:', `Bearer ${workingToken.substring(0, 20)}...`)
+        
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${workingToken}`,
+            'Content-Type': 'application/json'
+          }
+        })
+        
+        console.log('Response status:', response.status)
+        console.log('Response headers:', response.headers)
+        
+        if (response.ok) {
+          const data = await response.json()
+          console.log('✅ Direct fetch SUCCESS:', data)
+          alert(`Direct fetch SUCCESS!\nStatus: ${response.status}\nData: ${JSON.stringify(data, null, 2)}`)
+        } else {
+          const errorText = await response.text()
+          console.log('❌ Direct fetch FAILED:', response.status, errorText)
+          alert(`Direct fetch FAILED!\nStatus: ${response.status}\nError: ${errorText}`)
+        }
+        
+      } catch (error) {
+        console.error('❌ Direct fetch ERROR:', error)
+        alert(`Direct fetch ERROR: ${error.message}`)
+      }
+    }
+
     onMounted(() => {
       loadTeams()
     })
@@ -506,7 +628,10 @@ export default {
       debugApiUrl,
       viteApiBaseUrl,
       nodeEnv,
-      mode
+      mode,
+      setWorkingToken,
+      debugCurrentToken,
+      testCurlRequest
     }
   }
 }

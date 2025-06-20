@@ -20,6 +20,8 @@ build:
       value: Efficiency Tracker
     - name: VITE_DEBUG
       value: false
+    - name: VITE_API_BASE_URL
+      value: https://mnwpivaen5.us-east-1.awsapprunner.com
 run:
   runtime-version: 22.16.0
   pre-run:
@@ -42,3 +44,5 @@ run:
       value: Efficiency Tracker
     - name: VITE_DEBUG
       value: false
+    - name: VITE_API_BASE_URL
+      value: https://mnwpivaen5.us-east-1.awsapprunner.com
