@@ -28,6 +28,12 @@
         >
           🧪 Test Curl Request
         </button>
+        <button 
+          @click="testUnauthenticatedEndpoint" 
+          class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600"
+        >
+          🔓 Test Unauthenticated Endpoint
+        </button>
       </div>
     </div>
 
@@ -605,6 +611,41 @@ export default {
       }
     }
 
+    const testUnauthenticatedEndpoint = async () => {
+      console.log('🔓 Testing unauthenticated endpoint...')
+      
+      const url = 'https://mnwpivaen5.us-east-1.awsapprunner.com/api/teams/test'
+      
+      try {
+        console.log('Making direct fetch request to test endpoint...')
+        console.log('URL:', url)
+        
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
+        
+        console.log('Response status:', response.status)
+        console.log('Response headers:', response.headers)
+        
+        if (response.ok) {
+          const data = await response.json()
+          console.log('✅ Unauthenticated endpoint SUCCESS:', data)
+          alert(`Unauthenticated endpoint SUCCESS!\nStatus: ${response.status}\nData: ${JSON.stringify(data, null, 2)}`)
+        } else {
+          const errorText = await response.text()
+          console.log('❌ Unauthenticated endpoint FAILED:', response.status, errorText)
+          alert(`Unauthenticated endpoint FAILED!\nStatus: ${response.status}\nError: ${errorText}`)
+        }
+        
+      } catch (error) {
+        console.error('❌ Unauthenticated endpoint ERROR:', error)
+        alert(`Unauthenticated endpoint ERROR: ${error.message}`)
+      }
+    }
+
     onMounted(() => {
       loadTeams()
     })
@@ -631,7 +672,8 @@ export default {
       mode,
       setWorkingToken,
       debugCurrentToken,
-      testCurlRequest
+      testCurlRequest,
+      testUnauthenticatedEndpoint
     }
   }
 }
