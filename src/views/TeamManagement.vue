@@ -143,23 +143,83 @@
             </div>
 
             <!-- Add Developer Section -->
-            <div class="mb-6">
+            <div v-if="newDevelopers[team.name]" class="mb-6">
               <h4 class="font-medium text-gray-900 mb-3">Add Developer</h4>
-              <form @submit.prevent="addDeveloper(team)" class="flex space-x-3">
-                <input
-                  v-model="newDeveloperName"
-                  type="text"
-                  placeholder="Developer name"
-                  class="input-field flex-1"
-                  required
-                />
-                <button
-                  type="submit"
-                  :disabled="!newDeveloperName.trim()"
-                  class="btn-primary disabled:opacity-50"
-                >
-                  Add
-                </button>
+              <form @submit.prevent="addDeveloper(team)" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                      Developer Name *
+                    </label>
+                    <input
+                      v-model="newDevelopers[team.name].name"
+                      type="text"
+                      placeholder="e.g., John Smith"
+                      class="input-field"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                      Email *
+                    </label>
+                    <input
+                      v-model="newDevelopers[team.name].email"
+                      type="email"
+                      placeholder="john.smith@company.com"
+                      class="input-field"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                      Employee ID *
+                    </label>
+                    <input
+                      v-model="newDevelopers[team.name].employeeId"
+                      type="text"
+                      placeholder="wda-11144"
+                      class="input-field"
+                      required
+                    />
+                  </div>
+                </div>
+                
+                <!-- Auto-generated Password Display -->
+                <div v-if="newDevelopers[team.name].name && newDevelopers[team.name].employeeId" 
+                     class="p-3 bg-blue-50 rounded-lg">
+                  <label class="block text-sm font-medium text-gray-700 mb-1">
+                    Auto-generated Password (read-only)
+                  </label>
+                  <div class="flex items-center space-x-2">
+                    <input
+                      :value="generatePassword(newDevelopers[team.name].name, newDevelopers[team.name].employeeId)"
+                      type="text"
+                      class="input-field bg-gray-50"
+                      readonly
+                    />
+                    <button
+                      type="button"
+                      @click="copyToClipboard(generatePassword(newDevelopers[team.name].name, newDevelopers[team.name].employeeId))"
+                      class="btn-secondary text-sm"
+                    >
+                      Copy
+                    </button>
+                  </div>
+                  <p class="text-xs text-gray-600 mt-1">
+                    Password format: firstname + employee number (e.g., john11144)
+                  </p>
+                </div>
+                
+                <div class="flex justify-end">
+                  <button
+                    type="submit"
+                    :disabled="!isValidDeveloper(team.name)"
+                    class="btn-primary disabled:opacity-50"
+                  >
+                    Add Developer
+                  </button>
+                </div>
               </form>
             </div>
 
@@ -174,28 +234,41 @@
                 No developers in this team yet.
               </div>
               
-              <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                <div v-for="developer in team.developers" :key="developer.id || developer" 
-                     class="flex items-center justify-between bg-gray-50 rounded-lg p-3">
-                  <div class="flex items-center">
-                    <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                      <span class="text-sm font-medium text-blue-600">
-                        {{ (developer.name || developer).charAt(0).toUpperCase() }}
-                      </span>
+              <div v-else class="grid grid-cols-1 gap-3">
+                <div v-for="developer in team.developers" :key="developer.id || developer.name || developer" 
+                     class="bg-gray-50 rounded-lg p-4">
+                  <div class="flex items-start justify-between">
+                    <div class="flex items-center">
+                      <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                        <span class="text-sm font-medium text-blue-600">
+                          {{ (developer.name || developer).charAt(0).toUpperCase() }}
+                        </span>
+                      </div>
+                      <div>
+                        <div class="font-medium text-gray-900">
+                          {{ developer.name || developer }}
+                        </div>
+                        <div class="text-sm text-gray-600">
+                          {{ developer.email || 'No email' }}
+                        </div>
+                        <div v-if="developer.employee_id" class="text-xs text-gray-500">
+                          ID: {{ developer.employee_id }}
+                        </div>
+                        <div v-if="developer.password" class="text-xs text-gray-500 font-mono">
+                          Password: {{ developer.password }}
+                        </div>
+                      </div>
                     </div>
-                    <span class="text-sm font-medium text-gray-900">
-                      {{ developer.name || developer }}
-                    </span>
+                    <button
+                      @click="removeDeveloper(team, developer)"
+                      class="text-red-500 hover:text-red-700"
+                      title="Remove developer"
+                    >
+                      <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                      </svg>
+                    </button>
                   </div>
-                  <button
-                    @click="removeDeveloper(team, developer)"
-                    class="text-red-500 hover:text-red-700"
-                    title="Remove developer"
-                  >
-                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-                    </svg>
-                  </button>
                 </div>
               </div>
             </div>
@@ -240,7 +313,7 @@ export default {
     
     const teams = ref([])
     const newTeam = ref({ name: '', description: '' })
-    const newDeveloperName = ref('')
+    const newDevelopers = ref({})
     const editingTeam = ref(null)
     const submitting = ref(false)
     const loading = ref(true)
@@ -265,6 +338,14 @@ export default {
         if (response.ok) {
           const data = await response.json()
           teams.value = data || []
+          
+          // Initialize newDevelopers for each team
+          teams.value.forEach(team => {
+            if (!newDevelopers.value[team.name]) {
+              newDevelopers.value[team.name] = { name: '', email: '', employeeId: '' }
+            }
+          })
+          
           console.log('Teams loaded successfully:', teams.value)
         } else {
           const errorText = await response.text()
@@ -304,6 +385,9 @@ export default {
         if (response.ok) {
           const data = await response.json()
           console.log('Team created successfully:', data)
+          
+          // Initialize newDeveloper for the new team
+          newDevelopers.value[newTeam.value.name.trim()] = { name: '', email: '', employeeId: '' }
           
           // Reload teams to get updated list
           await loadTeams()
@@ -388,16 +472,21 @@ export default {
     }
 
     const addDeveloper = async (team) => {
-      if (!newDeveloperName.value.trim()) return
+      const dev = newDevelopers.value[team.name]
+      if (!dev?.name?.trim() || !dev?.email?.trim() || !dev?.employeeId?.trim()) return
 
       try {
         error.value = null
         
-        console.log('Adding developer to team:', team.name, newDeveloperName.value)
+        console.log('Adding developer to team:', team.name, dev)
+        
+        const password = generatePassword(dev.name, dev.employeeId)
         
         const developerData = {
-          dev_name: newDeveloperName.value.trim(),
-          dev_email: `${newDeveloperName.value.trim().toLowerCase().replace(/\s+/g, '.')}@company.com`
+          dev_name: dev.name.trim(),
+          dev_email: dev.email.trim(),
+          dev_employee_id: dev.employeeId.trim(),
+          dev_password: password
         }
         
         const response = await fetch(`${API_BASE_URL}/api/teams/add-developer?team_name=${encodeURIComponent(team.name)}`, {
@@ -415,7 +504,8 @@ export default {
           // Reload teams to get updated list
           await loadTeams()
           
-          newDeveloperName.value = ''
+          // Reset form for this team
+          newDevelopers.value[team.name] = { name: '', email: '', employeeId: '' }
         } else {
           const errorData = await response.json()
           console.error('Failed to add developer:', response.status, errorData)
@@ -480,6 +570,18 @@ export default {
       }
     }
 
+    const generatePassword = (name, employeeId) => {
+      if (!name || !employeeId) return ''
+      const firstName = name.split(' ')[0].toLowerCase()
+      const numbers = employeeId.replace(/\D/g, '')
+      return `${firstName}${numbers}`
+    }
+
+    const isValidDeveloper = (teamName) => {
+      const dev = newDevelopers.value[teamName]
+      return dev?.name?.trim() && dev?.email?.trim() && dev?.employeeId?.trim()
+    }
+
     onMounted(() => {
       loadTeams()
     })
@@ -487,7 +589,7 @@ export default {
     return {
       teams,
       newTeam,
-      newDeveloperName,
+      newDevelopers,
       editingTeam,
       submitting,
       loading,
@@ -499,7 +601,9 @@ export default {
       addDeveloper,
       removeDeveloper,
       generateAccessLink,
-      copyToClipboard
+      copyToClipboard,
+      generatePassword,
+      isValidDeveloper
     }
   }
 }
