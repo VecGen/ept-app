@@ -1,48 +1,5 @@
 <template>
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <!-- Debug Information -->
-    <div class="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
-      <h4 class="font-medium text-yellow-800">🔧 Debug Info</h4>
-      <div class="text-sm text-yellow-700 mt-1">
-        <p>VITE_API_BASE_URL: <code>{{ viteApiBaseUrl || 'undefined' }}</code></p>
-        <p>Computed BASE_URL: <code>{{ debugApiUrl }}</code></p>
-        <p>NODE_ENV: <code>{{ nodeEnv }}</code></p>
-        <p>MODE: <code>{{ mode }}</code></p>
-      </div>
-      <div class="mt-2">
-        <button
-          @click="setWorkingToken"
-          class="px-3 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600"
-        >
-          🔧 Set Working Token from Curl
-        </button>
-        <button
-          @click="debugCurrentToken"
-          class="ml-2 px-3 py-1 bg-green-500 text-white text-xs rounded hover:bg-green-600"
-        >
-          🔍 Debug Current Token
-        </button>
-        <button
-          @click="testCurlRequest"
-          class="ml-2 px-3 py-1 bg-purple-500 text-white text-xs rounded hover:bg-purple-600"
-        >
-          🧪 Test Curl Request
-        </button>
-        <button 
-          @click="testUnauthenticatedEndpoint" 
-          class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600"
-        >
-          🔓 Test Unauthenticated Endpoint
-        </button>
-        <button 
-          @click="testNewPublicEndpoint" 
-          class="ml-2 px-3 py-1 bg-indigo-500 text-white text-xs rounded hover:bg-indigo-600"
-        >
-          🆕 Test New Public Endpoint
-        </button>
-      </div>
-    </div>
-
     <!-- Header -->
     <div class="mb-8">
       <h1 class="text-3xl font-bold text-gray-900">👥 Team Management</h1>
@@ -274,14 +231,11 @@
 
 <script>
 import { ref, reactive, onMounted, computed } from 'vue'
-import { getTeams, createTeam, deleteTeam } from '../services/api'
-import { useAuthStore } from '../stores/auth'
 import { useRouter } from 'vue-router'
 
 export default {
   name: 'TeamManagement',
   setup() {
-    const authStore = useAuthStore()
     const router = useRouter()
     
     const teams = ref([])
@@ -292,22 +246,7 @@ export default {
     const loading = ref(true)
     const error = ref(null)
 
-    // Debug computed property to show actual API URL
-    const debugApiUrl = computed(() => {
-      return import.meta.env.VITE_API_BASE_URL || 'https://mnwpivaen5.us-east-1.awsapprunner.com'
-    })
-
-    const viteApiBaseUrl = computed(() => {
-      return import.meta.env.VITE_API_BASE_URL || 'https://mnwpivaen5.us-east-1.awsapprunner.com'
-    })
-
-    const nodeEnv = computed(() => {
-      return import.meta.env.NODE_ENV
-    })
-
-    const mode = computed(() => {
-      return import.meta.env.MODE
-    })
+    const API_BASE_URL = 'https://mnwpivaen5.us-east-1.awsapprunner.com'
 
     const loadTeams = async () => {
       try {
@@ -316,50 +255,26 @@ export default {
         
         console.log('Loading teams from API...')
         
-        // Debug: Log the token being used
-        const currentToken = localStorage.getItem('auth_token')
-        console.log('🔑 Current token in localStorage:', currentToken ? currentToken.substring(0, 50) + '...' : 'NO TOKEN')
-        console.log('🔑 Auth store token:', authStore.token ? authStore.token.substring(0, 50) + '...' : 'NO TOKEN')
-        console.log('🔑 Auth store isAuthenticated:', authStore.isAuthenticated)
-        console.log('🔑 Auth store userType:', authStore.userType)
+        const response = await fetch(`${API_BASE_URL}/api/teams/list`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
         
-        // Debug: Compare with working token from curl
-        const workingToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX3R5cGUiOiJhZG1pbiIsInN1YiI6ImFkbWluIiwiZXhwIjoxNzUwNDMxNDI0fQ.c1fGmqjGdFDVb2AjmNqiyccIaPFkFPtFzzjkrhE3Ing'
-        if (currentToken === workingToken) {
-          console.log('✅ Token matches working curl token')
+        if (response.ok) {
+          const data = await response.json()
+          teams.value = data || []
+          console.log('Teams loaded successfully:', teams.value)
         } else {
-          console.log('❌ Token DOES NOT match working curl token')
-          console.log('Expected (curl):', workingToken.substring(0, 50) + '...')
-          console.log('Actual (browser):', currentToken ? currentToken.substring(0, 50) + '...' : 'NO TOKEN')
+          const errorText = await response.text()
+          console.error('Failed to load teams:', response.status, errorText)
+          error.value = `Failed to load teams: ${response.status} - ${errorText}`
         }
-        
-        const response = await getTeams()
-        teams.value = response || []
-        
-        console.log('Teams loaded successfully:', teams.value)
         
       } catch (err) {
         console.error('Failed to load teams:', err)
-        
-        // Enhanced error logging
-        console.log('❌ Error details:')
-        console.log('  - Status:', err.response?.status)
-        console.log('  - Data:', err.response?.data)
-        console.log('  - Headers:', err.response?.headers)
-        console.log('  - Config:', err.config)
-        
-        if (err.response?.status === 401) {
-          error.value = 'Authentication expired. Please log in again.'
-          authStore.logout()
-          router.push('/admin/login')
-          return
-        } else if (err.response?.status === 404) {
-          error.value = 'Teams API endpoint not found.'
-        } else {
-          error.value = `Failed to load teams: ${err.response?.data?.detail || err.message || 'Unknown error'}`
-        }
-        
-        // Fallback to empty teams array
+        error.value = `Failed to load teams: ${err.message}`
         teams.value = []
       } finally {
         loading.value = false
@@ -375,32 +290,35 @@ export default {
         
         console.log('Creating team:', newTeam.value)
         
-        const response = await createTeam({
-          team_name: newTeam.value.name.trim(),
-          description: newTeam.value.description.trim() || undefined
+        const response = await fetch(`${API_BASE_URL}/api/teams/create`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            team_name: newTeam.value.name.trim(),
+            description: newTeam.value.description.trim() || undefined
+          })
         })
         
-        console.log('Team created successfully:', response)
-        
-        // Reload teams to get updated list
-        await loadTeams()
-        
-        // Reset form
-        newTeam.value = { name: '', description: '' }
+        if (response.ok) {
+          const data = await response.json()
+          console.log('Team created successfully:', data)
+          
+          // Reload teams to get updated list
+          await loadTeams()
+          
+          // Reset form
+          newTeam.value = { name: '', description: '' }
+        } else {
+          const errorData = await response.json()
+          console.error('Failed to create team:', response.status, errorData)
+          error.value = `Failed to create team: ${errorData.detail || 'Unknown error'}`
+        }
         
       } catch (err) {
         console.error('Failed to add team:', err)
-        
-        if (err.response?.status === 400) {
-          error.value = `Failed to create team: ${err.response.data?.detail || 'Team name may already exist'}`
-        } else if (err.response?.status === 401) {
-          error.value = 'Authentication expired. Please log in again.'
-          authStore.logout()
-          router.push('/admin/login')
-          return
-        } else {
-          error.value = `Failed to create team: ${err.response?.data?.detail || err.message || 'Unknown error'}`
-        }
+        error.value = `Failed to create team: ${err.message}`
       } finally {
         submitting.value = false
       }
@@ -422,8 +340,7 @@ export default {
         
         console.log('Updating team:', editingTeam.value)
         
-        // Note: The teams API doesn't seem to have an update endpoint in the backend
-        // This would need to be implemented in the API first
+        // Note: Team update API endpoint needs to be implemented
         console.warn('Team update API not available yet')
         error.value = 'Team update functionality not available yet in the API'
         
@@ -431,7 +348,7 @@ export default {
         
       } catch (err) {
         console.error('Failed to update team:', err)
-        error.value = `Failed to update team: ${err.response?.data?.detail || err.message || 'Unknown error'}`
+        error.value = `Failed to update team: ${err.message}`
       }
     }
 
@@ -445,25 +362,28 @@ export default {
         
         console.log('Deleting team:', team.name)
         
-        const response = await deleteTeam(team.name)
-        console.log('Team deleted successfully:', response)
+        const response = await fetch(`${API_BASE_URL}/api/teams/delete-team?team_name=${encodeURIComponent(team.name)}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
         
-        // Reload teams to get updated list
-        await loadTeams()
+        if (response.ok) {
+          const data = await response.json()
+          console.log('Team deleted successfully:', data)
+          
+          // Reload teams to get updated list
+          await loadTeams()
+        } else {
+          const errorData = await response.json()
+          console.error('Failed to delete team:', response.status, errorData)
+          error.value = `Failed to delete team: ${errorData.detail || 'Unknown error'}`
+        }
         
       } catch (err) {
         console.error('Failed to delete team:', err)
-        
-        if (err.response?.status === 404) {
-          error.value = `Team "${team.name}" not found`
-        } else if (err.response?.status === 401) {
-          error.value = 'Authentication expired. Please log in again.'
-          authStore.logout()
-          router.push('/admin/login')
-          return
-        } else {
-          error.value = `Failed to delete team: ${err.response?.data?.detail || err.message || 'Unknown error'}`
-        }
+        error.value = `Failed to delete team: ${err.message}`
       }
     }
 
@@ -475,28 +395,36 @@ export default {
         
         console.log('Adding developer to team:', team.name, newDeveloperName.value)
         
-        // For now, add locally since the API endpoint would be POST /api/teams/{team_name}/developers
-        // This needs to be implemented in the backend API
         const developerData = {
           dev_name: newDeveloperName.value.trim(),
           dev_email: `${newDeveloperName.value.trim().toLowerCase().replace(/\s+/g, '.')}@company.com`
         }
         
-        // Import the addDeveloper API function if it exists
-        // For now, simulate the addition locally
-        if (!team.developers) team.developers = []
-        team.developers.push({
-          name: newDeveloperName.value.trim(),
-          email: developerData.dev_email
+        const response = await fetch(`${API_BASE_URL}/api/teams/add-developer?team_name=${encodeURIComponent(team.name)}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(developerData)
         })
-
-        newDeveloperName.value = ''
         
-        console.log('Developer added successfully (locally)')
+        if (response.ok) {
+          const data = await response.json()
+          console.log('Developer added successfully:', data)
+          
+          // Reload teams to get updated list
+          await loadTeams()
+          
+          newDeveloperName.value = ''
+        } else {
+          const errorData = await response.json()
+          console.error('Failed to add developer:', response.status, errorData)
+          error.value = `Failed to add developer: ${errorData.detail || 'Unknown error'}`
+        }
         
       } catch (err) {
         console.error('Failed to add developer:', err)
-        error.value = `Failed to add developer: ${err.response?.data?.detail || err.message || 'Unknown error'}`
+        error.value = `Failed to add developer: ${err.message}`
       }
     }
 
@@ -508,19 +436,31 @@ export default {
       try {
         error.value = null
         
-        console.log('Removing developer from team:', team.name, developer.name)
+        const developerName = developer.name || developer
+        console.log('Removing developer from team:', team.name, developerName)
         
-        // For now, remove locally since the API endpoint would be DELETE /api/teams/{team_name}/developers/{developer_name}
-        // This needs to be implemented in the backend API
-        team.developers = team.developers.filter(d => 
-          (d.name || d) !== (developer.name || developer)
-        )
+        const response = await fetch(`${API_BASE_URL}/api/teams/remove-developer?team_name=${encodeURIComponent(team.name)}&developer_name=${encodeURIComponent(developerName)}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
         
-        console.log('Developer removed successfully (locally)')
+        if (response.ok) {
+          const data = await response.json()
+          console.log('Developer removed successfully:', data)
+          
+          // Reload teams to get updated list
+          await loadTeams()
+        } else {
+          const errorData = await response.json()
+          console.error('Failed to remove developer:', response.status, errorData)
+          error.value = `Failed to remove developer: ${errorData.detail || 'Unknown error'}`
+        }
         
       } catch (err) {
         console.error('Failed to remove developer:', err)
-        error.value = `Failed to remove developer: ${err.response?.data?.detail || err.message || 'Unknown error'}`
+        error.value = `Failed to remove developer: ${err.message}`
       }
     }
 
@@ -537,153 +477,6 @@ export default {
       } catch (error) {
         console.error('Failed to copy to clipboard:', error)
         alert('Failed to copy link. Please copy manually.')
-      }
-    }
-
-    const setWorkingToken = () => {
-      const workingToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX3R5cGUiOiJhZG1pbiIsInN1YiI6ImFkbWluIiwiZXhwIjoxNzUwNDMxNDI0fQ.c1fGmqjGdFDVb2AjmNqiyccIaPFkFPtFzzjkrhE3Ing'
-      
-      // Set token in localStorage
-      localStorage.setItem('auth_token', workingToken)
-      localStorage.setItem('user_type', 'admin')
-      
-      // Update auth store
-      authStore.token = workingToken
-      authStore.userType = 'admin'
-      authStore.isAuthenticated = true
-      authStore.user = { type: 'admin' }
-      
-      console.log('✅ Working token set successfully!')
-      alert('Working token from curl has been set. Try loading teams now.')
-      
-      // Automatically retry loading teams
-      loadTeams()
-    }
-
-    const debugCurrentToken = () => {
-      const currentToken = localStorage.getItem('auth_token')
-      const userType = localStorage.getItem('user_type')
-      
-      console.log('=== TOKEN DEBUG INFO ===')
-      console.log('localStorage auth_token:', currentToken)
-      console.log('localStorage user_type:', userType)
-      console.log('authStore.token:', authStore.token)
-      console.log('authStore.userType:', authStore.userType)
-      console.log('authStore.isAuthenticated:', authStore.isAuthenticated)
-      
-      const workingToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX3R5cGUiOiJhZG1pbiIsInN1YiI6ImFkbWluIiwiZXhwIjoxNzUwNDMxNDI0fQ.c1fGmqjGdFDVb2AjmNqiyccIaPFkFPtFzzjkrhE3Ing'
-      console.log('Working token (curl):', workingToken)
-      console.log('Tokens match:', currentToken === workingToken)
-      
-      // Show in alert for easy viewing
-      alert(`Current token: ${currentToken ? currentToken.substring(0, 50) + '...' : 'NONE'}\n\nAuth store: ${authStore.isAuthenticated ? 'Authenticated' : 'Not authenticated'}\n\nUser type: ${authStore.userType || 'None'}`)
-    }
-
-    const testCurlRequest = async () => {
-      console.log('🧪 Testing exact curl request...')
-      
-      const workingToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX3R5cGUiOiJhZG1pbiIsInN1YiI6ImFkbWluIiwiZXhwIjoxNzUwNDMxNDI0fQ.c1fGmqjGdFDVb2AjmNqiyccIaPFkFPtFzzjkrhE3Ing'
-      const url = 'https://mnwpivaen5.us-east-1.awsapprunner.com/api/teams'
-      
-      try {
-        console.log('Making direct fetch request...')
-        console.log('URL:', url)
-        console.log('Authorization header:', `Bearer ${workingToken.substring(0, 20)}...`)
-        
-        const response = await fetch(url, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${workingToken}`,
-            'Content-Type': 'application/json'
-          }
-        })
-        
-        console.log('Response status:', response.status)
-        console.log('Response headers:', response.headers)
-        
-        if (response.ok) {
-          const data = await response.json()
-          console.log('✅ Direct fetch SUCCESS:', data)
-          alert(`Direct fetch SUCCESS!\nStatus: ${response.status}\nData: ${JSON.stringify(data, null, 2)}`)
-        } else {
-          const errorText = await response.text()
-          console.log('❌ Direct fetch FAILED:', response.status, errorText)
-          alert(`Direct fetch FAILED!\nStatus: ${response.status}\nError: ${errorText}`)
-        }
-        
-      } catch (error) {
-        console.error('❌ Direct fetch ERROR:', error)
-        alert(`Direct fetch ERROR: ${error.message}`)
-      }
-    }
-
-    const testUnauthenticatedEndpoint = async () => {
-      console.log('🔓 Testing unauthenticated endpoint...')
-      
-      const url = 'https://mnwpivaen5.us-east-1.awsapprunner.com/api/teams/test'
-      
-      try {
-        console.log('Making direct fetch request to test endpoint...')
-        console.log('URL:', url)
-        
-        const response = await fetch(url, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        })
-        
-        console.log('Response status:', response.status)
-        console.log('Response headers:', response.headers)
-        
-        if (response.ok) {
-          const data = await response.json()
-          console.log('✅ Unauthenticated endpoint SUCCESS:', data)
-          alert(`Unauthenticated endpoint SUCCESS!\nStatus: ${response.status}\nData: ${JSON.stringify(data, null, 2)}`)
-        } else {
-          const errorText = await response.text()
-          console.log('❌ Unauthenticated endpoint FAILED:', response.status, errorText)
-          alert(`Unauthenticated endpoint FAILED!\nStatus: ${response.status}\nError: ${errorText}`)
-        }
-        
-      } catch (error) {
-        console.error('❌ Unauthenticated endpoint ERROR:', error)
-        alert(`Unauthenticated endpoint ERROR: ${error.message}`)
-      }
-    }
-
-    const testNewPublicEndpoint = async () => {
-      console.log('🆕 Testing new public endpoint...')
-      
-      const url = 'https://mnwpivaen5.us-east-1.awsapprunner.com/api/teams/test-public'
-      
-      try {
-        console.log('Making direct fetch request to new test endpoint...')
-        console.log('URL:', url)
-        
-        const response = await fetch(url, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        })
-        
-        console.log('Response status:', response.status)
-        console.log('Response headers:', response.headers)
-        
-        if (response.ok) {
-          const data = await response.json()
-          console.log('✅ New public endpoint SUCCESS:', data)
-          alert(`New public endpoint SUCCESS!\nStatus: ${response.status}\nData: ${JSON.stringify(data, null, 2)}`)
-        } else {
-          const errorText = await response.text()
-          console.log('❌ New public endpoint FAILED:', response.status, errorText)
-          alert(`New public endpoint FAILED!\nStatus: ${response.status}\nError: ${errorText}`)
-        }
-        
-      } catch (error) {
-        console.error('❌ New public endpoint ERROR:', error)
-        alert(`New public endpoint ERROR: ${error.message}`)
       }
     }
 
@@ -706,16 +499,7 @@ export default {
       addDeveloper,
       removeDeveloper,
       generateAccessLink,
-      copyToClipboard,
-      debugApiUrl,
-      viteApiBaseUrl,
-      nodeEnv,
-      mode,
-      setWorkingToken,
-      debugCurrentToken,
-      testCurlRequest,
-      testUnauthenticatedEndpoint,
-      testNewPublicEndpoint
+      copyToClipboard
     }
   }
 }
