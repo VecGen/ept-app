@@ -308,7 +308,6 @@
 
 <script>
 import { ref, computed, onMounted } from 'vue'
-import { getTeams, getAdminDashboard } from '../services/api'
 
 export default {
   name: 'DataManagement',
@@ -351,46 +350,38 @@ export default {
         
         console.log('Loading data management data...')
         
-        // Load teams
-        const teamsResponse = await getTeams()
-        teams.value = teamsResponse.teams || teamsResponse || []
+        // Load teams from public API
+        const response = await fetch('https://mnwpivaen5.us-east-1.awsapprunner.com/api/teams/list', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
         
-        // Try to load dashboard data for overall stats
-        try {
-          const dashboardResponse = await getAdminDashboard()
-          
-          // Extract entries if available in dashboard response
-          entries.value = dashboardResponse.recent_activity || dashboardResponse.entries || []
-          
-          // Calculate stats from dashboard or teams data
-          stats.value = {
-            totalEntries: dashboardResponse.total_entries || entries.value.length || 0,
-            totalHoursSaved: dashboardResponse.total_hours_saved || dashboardResponse.total_time_saved || 0,
-            activeTeams: teams.value.length
-          }
-        } catch (dashboardError) {
-          console.warn('Dashboard data not available, using team data only:', dashboardError.response?.status)
-          // If dashboard fails, just use teams data
-          stats.value = {
-            totalEntries: 0,
-            totalHoursSaved: 0,
-            activeTeams: teams.value.length
-          }
+        if (response.ok) {
+          const teamsData = await response.json()
+          teams.value = teamsData || []
+          console.log('Teams loaded successfully:', teamsData)
+        } else {
+          throw new Error(`Failed to load teams: ${response.status}`)
+        }
+        
+        // For now, we don't have efficiency entries in the S3 teams data
+        // So we'll use empty data and just show team statistics
+        entries.value = []
+        
+        // Calculate stats from teams data
+        stats.value = {
+          totalEntries: 0, // No efficiency entries data yet
+          totalHoursSaved: 0, // No efficiency entries data yet
+          activeTeams: teams.value.length
         }
         
         console.log('Data management data loaded successfully')
         
       } catch (err) {
         console.error('Failed to load data:', err)
-        
-        if (err.response?.status === 401) {
-          error.value = 'Authentication expired. Please log in again.'
-          return
-        } else if (err.response?.status === 404) {
-          error.value = 'Data management endpoints not found.'
-        } else {
-          error.value = `Failed to load data: ${err.response?.data?.detail || err.message || 'Unknown error'}`
-        }
+        error.value = `Failed to load data: ${err.message}`
         
         // Fallback to empty data
         teams.value = []
@@ -410,11 +401,9 @@ export default {
       try {
         exporting.value = true
         
-        // This will be implemented when backend is ready
-        // const response = await dataAPI.exportData(exportForm.value)
-        
+        // This will be implemented when backend supports data export
         console.log('Exporting data:', exportForm.value)
-        alert('Export functionality will be implemented when backend is ready!')
+        alert('Export functionality will be implemented when backend supports it!')
         
       } catch (error) {
         console.error('Failed to export data:', error)
@@ -434,17 +423,9 @@ export default {
       }
       
       try {
-        // This will be implemented when backend is ready
-        // await dataAPI.deleteEntry(entry.teamName, entry.id)
-        
-        entries.value = entries.value.filter(e => e.id !== entry.id)
-        
-        // Recalculate stats
-        stats.value = {
-          totalEntries: entries.value.length,
-          totalHoursSaved: entries.value.reduce((sum, entry) => sum + entry.efficiencyGained, 0),
-          activeTeams: teams.value.length
-        }
+        // This will be implemented when backend supports entry deletion
+        console.log('Deleting entry:', entry)
+        alert('Delete functionality will be implemented when backend supports it!')
         
       } catch (error) {
         console.error('Failed to delete entry:', error)
