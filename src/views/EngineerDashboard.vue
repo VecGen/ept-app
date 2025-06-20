@@ -143,19 +143,33 @@
 <script>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import { useAuthStore } from '../stores/auth'
 
 export default {
   name: 'EngineerDashboard',
   setup() {
     const route = useRoute()
+    const authStore = useAuthStore()
     const showAnalytics = ref(false)
     const entries = ref([])
     const dashboardStats = ref({})
     const loading = ref(true)
     const error = ref(null)
 
-    const teamName = computed(() => route.query.team || 'Unknown Team')
-    const developerName = computed(() => route.query.dev || 'Unknown Developer')
+    // Get team and developer info from auth store first, then URL parameters
+    const teamName = computed(() => {
+      if (authStore.isAuthenticated && authStore.user?.team) {
+        return authStore.user.team
+      }
+      return route.query.team || 'Unknown Team'
+    })
+
+    const developerName = computed(() => {
+      if (authStore.isAuthenticated && authStore.user?.name) {
+        return authStore.user.name
+      }
+      return route.query.dev || 'Unknown Developer'
+    })
 
     const totalTimeSaved = computed(() => {
       return dashboardStats.value.total_time_saved || 0
@@ -211,8 +225,8 @@ export default {
         loading.value = true
         error.value = null
         
-        if (!teamName.value || !developerName.value) {
-          error.value = 'Team and developer names are required'
+        if (!teamName.value || !developerName.value || teamName.value === 'Unknown Team' || developerName.value === 'Unknown Developer') {
+          error.value = 'Team and developer names are required. Please log in or access this page with proper parameters.'
           return
         }
         

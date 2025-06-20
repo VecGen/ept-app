@@ -220,7 +220,7 @@
       <!-- Submit Button -->
       <div class="flex justify-end space-x-3">
         <router-link 
-          :to="`/engineer?team=${teamName}&dev=${developerName}`" 
+          :to="authStore.isAuthenticated ? '/engineer' : `/engineer?team=${teamName}&dev=${developerName}`"
           class="btn-secondary"
         >
           Cancel
@@ -241,19 +241,32 @@
 <script>
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useAuthStore } from '../stores/auth'
 
 export default {
   name: 'EngineerEntry',
   setup() {
     const router = useRouter()
     const route = useRoute()
+    const authStore = useAuthStore()
     const submitting = ref(false)
     const loading = ref(true)
     const error = ref(null)
     
-    // Get team and developer from URL parameters
-    const teamName = ref(route.query.team || '')
-    const developerName = ref(route.query.dev || '')
+    // Get team and developer from auth store first, then URL parameters
+    const teamName = computed(() => {
+      if (authStore.isAuthenticated && authStore.user?.team) {
+        return authStore.user.team
+      }
+      return route.query.team || ''
+    })
+
+    const developerName = computed(() => {
+      if (authStore.isAuthenticated && authStore.user?.name) {
+        return authStore.user.name
+      }
+      return route.query.dev || ''
+    })
     
     // Form data
     const form = ref({
@@ -397,7 +410,7 @@ export default {
       if (!canSubmit.value) return
       
       if (!teamName.value || !developerName.value) {
-        error.value = 'Missing team or developer information. Please access this page through the proper link.'
+        error.value = 'Missing team or developer information. Please log in or access this page through the proper link.'
         return
       }
 
@@ -435,9 +448,13 @@ export default {
           const result = await response.json()
           console.log('Entry saved successfully:', result)
           
-          // Show success message and redirect
+          // Show success message and redirect based on authentication status
           alert('Entry saved successfully!')
-          router.push(`/engineer?team=${teamName.value}&dev=${developerName.value}`)
+          if (authStore.isAuthenticated) {
+            router.push('/engineer')
+          } else {
+            router.push(`/engineer?team=${teamName.value}&dev=${developerName.value}`)
+          }
         } else {
           const errorData = await response.json()
           throw new Error(errorData.detail || `HTTP ${response.status}`)
@@ -468,6 +485,7 @@ export default {
       submitting,
       loading,
       error,
+      authStore,
       submitEntry
     }
   }
