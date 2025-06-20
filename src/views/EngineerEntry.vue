@@ -4,10 +4,28 @@
     <div class="mb-8">
       <h1 class="text-3xl font-bold text-gray-900">📝 Log Weekly Update</h1>
       <p class="mt-2 text-gray-600">Track your efficiency gains from AI coding assistants</p>
+      
+      <!-- Team and Developer Info -->
+      <div v-if="teamName && developerName" class="mt-4 p-3 bg-blue-50 rounded-md">
+        <p class="text-sm text-blue-700">
+          <strong>Team:</strong> {{ teamName }} | <strong>Developer:</strong> {{ developerName }}
+        </p>
+      </div>
+      
+      <!-- Error Message -->
+      <div v-if="error" class="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+        <p class="text-sm text-red-800">{{ error }}</p>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div v-if="loading" class="text-center py-8">
+      <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <p class="mt-2 text-gray-600">Loading form settings...</p>
     </div>
 
     <!-- Form -->
-    <form @submit.prevent="submitEntry" class="space-y-6">
+    <form v-else @submit.prevent="submitEntry" class="space-y-6">
       <!-- Week Selection -->
       <div class="card">
         <div class="card-header">
@@ -201,7 +219,10 @@
 
       <!-- Submit Button -->
       <div class="flex justify-end space-x-3">
-        <router-link to="/engineer" class="btn-secondary">
+        <router-link 
+          :to="`/engineer?team=${teamName}&dev=${developerName}`" 
+          class="btn-secondary"
+        >
           Cancel
         </router-link>
         <button
@@ -218,14 +239,21 @@
 </template>
 
 <script>
-import { ref, computed, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, watch, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 
 export default {
   name: 'EngineerEntry',
   setup() {
     const router = useRouter()
+    const route = useRoute()
     const submitting = ref(false)
+    const loading = ref(true)
+    const error = ref(null)
+    
+    // Get team and developer from URL parameters
+    const teamName = ref(route.query.team || '')
+    const developerName = ref(route.query.dev || '')
     
     // Form data
     const form = ref({
@@ -239,34 +267,11 @@ export default {
       notes: ''
     })
 
-    // Static data (will come from backend later)
-    const categories = ref([
-      'Feature Development',
-      'Bug Fixes',
-      'Code Review',
-      'Testing',
-      'Documentation',
-      'Refactoring',
-      'API Development',
-      'Database Work'
-    ])
+    // Dynamic data from API
+    const categories = ref([])
+    const efficiencyAreas = ref([])
 
-    const efficiencyAreasByCategory = {
-      'Feature Development': ['Code Generation', 'API Design', 'Code Completion', 'Documentation'],
-      'Bug Fixes': ['Debugging', 'Code Analysis', 'Test Writing', 'Code Completion'],
-      'Code Review': ['Code Analysis', 'Code Completion', 'Documentation', 'Refactoring'],
-      'Testing': ['Test Writing', 'Code Generation', 'Test Data Creation', 'Debugging'],
-      'Documentation': ['Documentation', 'Code Generation', 'API Design', 'Code Completion'],
-      'Refactoring': ['Refactoring', 'Code Analysis', 'Code Generation', 'Code Completion'],
-      'API Development': ['API Design', 'Code Generation', 'Documentation', 'Test Writing'],
-      'Database Work': ['Query Optimization', 'Code Generation', 'Documentation', 'Debugging']
-    }
-
-    const allEfficiencyAreas = [
-      'Code Generation', 'Code Completion', 'API Design', 'Documentation',
-      'Debugging', 'Code Analysis', 'Test Writing', 'Refactoring',
-      'Test Data Creation', 'Query Optimization'
-    ]
+    const efficiencyAreasByCategory = ref({})
 
     // Computed properties
     const maxDate = computed(() => {
@@ -282,7 +287,7 @@ export default {
     })
 
     const availableEfficiencyAreas = computed(() => {
-      return efficiencyAreasByCategory[form.value.category] || allEfficiencyAreas
+      return efficiencyAreasByCategory.value[form.value.category] || efficiencyAreas.value
     })
 
     const canSubmit = computed(() => {
@@ -292,6 +297,61 @@ export default {
       }
       return baseValid
     })
+
+    // Load settings from API
+    const loadSettings = async () => {
+      try {
+        loading.value = true
+        error.value = null
+        
+        console.log('Loading team settings...')
+        
+        const response = await fetch('https://mnwpivaen5.us-east-1.awsapprunner.com/api/engineer/settings', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
+        
+        if (response.ok) {
+          const settingsData = await response.json()
+          console.log('Settings loaded successfully:', settingsData)
+          
+          if (settingsData.success && settingsData.data) {
+            categories.value = settingsData.data.categories || []
+            efficiencyAreas.value = settingsData.data.efficiency_areas || []
+            efficiencyAreasByCategory.value = settingsData.data.category_efficiency_mapping || {}
+          }
+        } else {
+          throw new Error(`Failed to load settings: ${response.status}`)
+        }
+        
+      } catch (err) {
+        console.error('Failed to load settings:', err)
+        error.value = `Failed to load settings: ${err.message}`
+        
+        // Fallback to default values
+        categories.value = [
+          'Feature Development',
+          'Bug Fixes',
+          'Code Review',
+          'Testing',
+          'Documentation',
+          'Refactoring',
+          'API Development',
+          'Database Work'
+        ]
+        
+        efficiencyAreas.value = [
+          'Code Generation', 'Code Completion', 'API Design', 'Documentation',
+          'Debugging', 'Code Analysis', 'Test Writing', 'Refactoring',
+          'Test Data Creation', 'Query Optimization'
+        ]
+        
+      } finally {
+        loading.value = false
+      }
+    }
 
     // Watch for category changes to reset efficiency areas
     watch(() => form.value.category, () => {
@@ -335,40 +395,79 @@ export default {
 
     async function submitEntry() {
       if (!canSubmit.value) return
+      
+      if (!teamName.value || !developerName.value) {
+        error.value = 'Missing team or developer information. Please access this page through the proper link.'
+        return
+      }
 
       try {
         submitting.value = true
+        error.value = null
         
         const entryData = {
-          ...form.value,
-          weekStart: getWeekDates(new Date(form.value.weekDate)).monday.toISOString().split('T')[0]
+          week_date: form.value.weekDate,
+          story_id: form.value.storyId || 'No ID',
+          original_estimate: form.value.originalEstimate,
+          efficiency_gained: form.value.efficiencyGained,
+          copilot_used: form.value.copilotUsed,
+          category: form.value.category,
+          efficiency_areas: form.value.efficiencyAreas,
+          notes: form.value.notes || ''
         }
 
-        // This will be implemented when backend is ready
-        // await engineerAPI.createEntry(entryData)
+        console.log('Submitting entry:', entryData)
         
-        console.log('Entry data:', entryData)
+        const queryParams = new URLSearchParams({
+          developer_name: developerName.value,
+          team_name: teamName.value
+        })
         
-        // Show success message and redirect
-        alert('Entry saved successfully!')
-        router.push('/engineer')
+        const response = await fetch(`https://mnwpivaen5.us-east-1.awsapprunner.com/api/engineer/entry?${queryParams}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(entryData)
+        })
+        
+        if (response.ok) {
+          const result = await response.json()
+          console.log('Entry saved successfully:', result)
+          
+          // Show success message and redirect
+          alert('Entry saved successfully!')
+          router.push(`/engineer?team=${teamName.value}&dev=${developerName.value}`)
+        } else {
+          const errorData = await response.json()
+          throw new Error(errorData.detail || `HTTP ${response.status}`)
+        }
         
       } catch (error) {
         console.error('Failed to save entry:', error)
-        alert('Failed to save entry. Please try again.')
+        error.value = `Failed to save entry: ${error.message}`
       } finally {
         submitting.value = false
       }
     }
 
+    onMounted(() => {
+      loadSettings()
+    })
+
     return {
       form,
       categories,
+      efficiencyAreas,
+      teamName,
+      developerName,
       maxDate,
       weekRange,
       availableEfficiencyAreas,
       canSubmit,
       submitting,
+      loading,
+      error,
       submitEntry
     }
   }

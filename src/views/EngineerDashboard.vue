@@ -3,7 +3,7 @@
     <!-- Header -->
     <div class="mb-8">
       <div class="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-6 text-white">
-        <h1 class="text-2xl font-bold mb-2">👋 Welcome, {{ userName }}!</h1>
+        <h1 class="text-2xl font-bold mb-2">👋 Welcome, {{ developerName }}!</h1>
         <p class="text-blue-100">Team: {{ teamName }}</p>
       </div>
     </div>
@@ -21,7 +21,7 @@
     </div>
 
     <!-- Quick Stats -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
       <div class="stat-card">
         <div class="stat-card-content">
           <div class="stat-card-title">Total Time Saved</div>
@@ -42,10 +42,23 @@
           <div class="stat-card-value">{{ thisWeekSaved.toFixed(1) }}h</div>
         </div>
       </div>
+      
+      <div class="stat-card">
+        <div class="stat-card-content">
+          <div class="stat-card-title">Avg Efficiency</div>
+          <div class="stat-card-value">{{ averageEfficiency.toFixed(1) }}%</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div v-if="loading" class="text-center py-8">
+      <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <p class="mt-2 text-gray-600">Loading dashboard...</p>
     </div>
 
     <!-- Action Buttons -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+    <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
       <div class="card">
         <div class="card-body text-center">
           <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -53,7 +66,10 @@
           </div>
           <h3 class="text-lg font-semibold text-gray-900 mb-2">Add New Entry</h3>
           <p class="text-gray-600 mb-4">Log your weekly efficiency gains</p>
-          <router-link to="/engineer/entry" class="btn-primary">
+          <router-link 
+            :to="`/engineer/entry?team=${teamName}&dev=${developerName}`" 
+            class="btn-primary"
+          >
             Add Entry
           </router-link>
         </div>
@@ -126,45 +142,45 @@
 
 <script>
 import { ref, computed, onMounted } from 'vue'
-import { useAuthStore } from '../stores/auth'
-import { getEngineerDashboard } from '../services/api'
+import { useRoute } from 'vue-router'
 
 export default {
   name: 'EngineerDashboard',
   setup() {
-    const authStore = useAuthStore()
+    const route = useRoute()
     const showAnalytics = ref(false)
     const entries = ref([])
+    const dashboardStats = ref({})
     const loading = ref(true)
     const error = ref(null)
 
-    const userName = computed(() => authStore.userData?.developer_name || 'Engineer')
-    const teamName = computed(() => authStore.userData?.team_name || 'Unknown Team')
+    const teamName = computed(() => route.query.team || 'Unknown Team')
+    const developerName = computed(() => route.query.dev || 'Unknown Developer')
 
     const totalTimeSaved = computed(() => {
-      return entries.value.reduce((sum, entry) => sum + (entry.efficiencyGained || entry.efficiency_gained || 0), 0)
+      return dashboardStats.value.total_time_saved || 0
     })
 
-    const totalEntries = computed(() => entries.value.length)
+    const totalEntries = computed(() => {
+      return dashboardStats.value.total_entries || 0
+    })
 
     const thisWeekSaved = computed(() => {
-      const now = new Date()
-      const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay() + 1))
-      startOfWeek.setHours(0, 0, 0, 0)
-      
-      return entries.value
-        .filter(entry => new Date(entry.weekStart || entry.week_start) >= startOfWeek)
-        .reduce((sum, entry) => sum + (entry.efficiencyGained || entry.efficiency_gained || 0), 0)
+      return dashboardStats.value.this_week_saved || 0
+    })
+
+    const averageEfficiency = computed(() => {
+      return dashboardStats.value.average_efficiency || 0
     })
 
     const categoryData = computed(() => {
       const categories = {}
       entries.value.forEach(entry => {
-        const cat = entry.category || 'Other'
+        const cat = entry.Category || 'Other'
         if (!categories[cat]) {
           categories[cat] = 0
         }
-        categories[cat] += entry.efficiencyGained || entry.efficiency_gained || 0
+        categories[cat] += entry.Efficiency_Gained_Hours || 0
       })
       
       return Object.entries(categories)
@@ -174,43 +190,63 @@ export default {
 
     const recentEntries = computed(() => {
       return [...entries.value]
-        .sort((a, b) => new Date(b.weekStart || b.week_start) - new Date(a.weekStart || a.week_start))
+        .sort((a, b) => new Date(b.Week_Start || b.week_start) - new Date(a.Week_Start || a.week_start))
         .slice(0, 5)
+        .map(entry => ({
+          id: entry.Story_ID || entry.story_id || Math.random().toString(36),
+          storyId: entry.Story_ID || entry.story_id,
+          category: entry.Category || entry.category,
+          weekStart: entry.Week_Start || entry.week_start,
+          efficiencyGained: entry.Efficiency_Gained_Hours || entry.efficiency_gained || 0,
+          copilotUsed: entry.Copilot_Used === 'Yes' || entry.copilot_used === 'Yes'
+        }))
     })
 
     const formatDate = (dateString) => {
       return new Date(dateString).toLocaleDateString()
     }
 
-    const loadEntries = async () => {
+    const loadDashboard = async () => {
       try {
         loading.value = true
         error.value = null
         
-        console.log('Loading engineer dashboard data...')
-        const response = await getEngineerDashboard()
-        console.log('Engineer dashboard response:', response)
+        if (!teamName.value || !developerName.value) {
+          error.value = 'Team and developer names are required'
+          return
+        }
         
-        // Handle different possible response structures
-        entries.value = response.entries || response.recent_entries || []
+        console.log('Loading engineer dashboard data for:', { team: teamName.value, developer: developerName.value })
+        
+        const response = await fetch(`https://mnwpivaen5.us-east-1.awsapprunner.com/api/engineer/dashboard?developer_name=${encodeURIComponent(developerName.value)}&team_name=${encodeURIComponent(teamName.value)}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
+        
+        if (!response.ok) {
+          throw new Error(`API returned ${response.status}: ${response.statusText}`)
+        }
+        
+        const data = await response.json()
+        console.log('Engineer dashboard response:', data)
+        
+        // Store dashboard stats
+        dashboardStats.value = data.stats || {}
+        
+        // Store entries for category analysis
+        entries.value = data.entries || []
         
         console.log('Engineer dashboard data loaded successfully')
         
       } catch (err) {
         console.error('Failed to load engineer dashboard:', err)
+        error.value = `Failed to load dashboard data: ${err.message || 'Unknown error'}`
         
-        if (err.response?.status === 401) {
-          error.value = 'Authentication expired. Please log in again.'
-          authStore.logout()
-          return
-        } else if (err.response?.status === 404) {
-          error.value = 'Engineer dashboard endpoint not found.'
-        } else {
-          error.value = `Failed to load dashboard data: ${err.response?.data?.detail || err.message || 'Unknown error'}`
-        }
-        
-        // Fallback to empty data instead of static data
+        // Fallback to empty data
         entries.value = []
+        dashboardStats.value = {}
         
       } finally {
         loading.value = false
@@ -218,16 +254,17 @@ export default {
     }
 
     onMounted(() => {
-      loadEntries()
+      loadDashboard()
     })
 
     return {
       showAnalytics,
-      userName,
       teamName,
+      developerName,
       totalTimeSaved,
       totalEntries,
       thisWeekSaved,
+      averageEfficiency,
       categoryData,
       recentEntries,
       formatDate,
