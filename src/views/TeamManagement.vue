@@ -34,6 +34,12 @@
         >
           🔓 Test Unauthenticated Endpoint
         </button>
+        <button 
+          @click="testNewPublicEndpoint" 
+          class="ml-2 px-3 py-1 bg-indigo-500 text-white text-xs rounded hover:bg-indigo-600"
+        >
+          🆕 Test New Public Endpoint
+        </button>
       </div>
     </div>
 
@@ -646,6 +652,41 @@ export default {
       }
     }
 
+    const testNewPublicEndpoint = async () => {
+      console.log('🆕 Testing new public endpoint...')
+      
+      const url = 'https://mnwpivaen5.us-east-1.awsapprunner.com/api/teams/test-public'
+      
+      try {
+        console.log('Making direct fetch request to new test endpoint...')
+        console.log('URL:', url)
+        
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
+        
+        console.log('Response status:', response.status)
+        console.log('Response headers:', response.headers)
+        
+        if (response.ok) {
+          const data = await response.json()
+          console.log('✅ New public endpoint SUCCESS:', data)
+          alert(`New public endpoint SUCCESS!\nStatus: ${response.status}\nData: ${JSON.stringify(data, null, 2)}`)
+        } else {
+          const errorText = await response.text()
+          console.log('❌ New public endpoint FAILED:', response.status, errorText)
+          alert(`New public endpoint FAILED!\nStatus: ${response.status}\nError: ${errorText}`)
+        }
+        
+      } catch (error) {
+        console.error('❌ New public endpoint ERROR:', error)
+        alert(`New public endpoint ERROR: ${error.message}`)
+      }
+    }
+
     onMounted(() => {
       loadTeams()
     })
@@ -673,7 +714,8 @@ export default {
       setWorkingToken,
       debugCurrentToken,
       testCurlRequest,
-      testUnauthenticatedEndpoint
+      testUnauthenticatedEndpoint,
+      testNewPublicEndpoint
     }
   }
 }

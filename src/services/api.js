@@ -101,10 +101,23 @@ export const logout = () => {
 // Team management functions
 export const getTeams = async () => {
   console.log('🔍 getTeams called - BASE_URL:', BASE_URL)
-  console.log('🔍 Full URL:', `${BASE_URL}/api/teams`)
+  console.log('🔍 Full URL:', `${BASE_URL}/api/teams/list`)
   
-  // Use relative URL to avoid CORS issues when on same domain
-  const response = await api.get('/api/teams', {
+  // Use the new /list endpoint instead of / to avoid CORS issues
+  const response = await api.get('/api/teams/list', {
+    headers: {
+      'Cache-Control': 'no-cache',
+      'Pragma': 'no-cache'
+    }
+  })
+  return response.data
+}
+
+export const getTeamsPublicTest = async () => {
+  console.log('🔍 getTeamsPublicTest called - testing without auth')
+  
+  // Use the new public test endpoint
+  const response = await api.get('/api/teams/test-public', {
     headers: {
       'Cache-Control': 'no-cache',
       'Pragma': 'no-cache'
@@ -114,17 +127,32 @@ export const getTeams = async () => {
 }
 
 export const createTeam = async (teamData) => {
-  const response = await api.post('/api/teams', teamData)
+  // Use the new /create endpoint
+  const response = await api.post('/api/teams/create', teamData)
   return response.data
 }
 
-export const updateTeam = async (teamName, teamData) => {
-  const response = await api.put(`/api/teams/${teamName}`, teamData)
+export const addDeveloper = async (teamName, developerData) => {
+  // Use the new /add-developer endpoint with team name as query param
+  const response = await api.post(`/api/teams/add-developer?team_name=${teamName}`, developerData)
+  return response.data
+}
+
+export const removeDeveloper = async (teamName, developerName) => {
+  // Use the new /remove-developer endpoint with query params
+  const response = await api.delete(`/api/teams/remove-developer?team_name=${teamName}&developer_name=${developerName}`)
   return response.data
 }
 
 export const deleteTeam = async (teamName) => {
-  const response = await api.delete(`/api/teams/${teamName}`)
+  // Use the new /delete-team endpoint with query param
+  const response = await api.delete(`/api/teams/delete-team?team_name=${teamName}`)
+  return response.data
+}
+
+export const getTeam = async (teamName) => {
+  // Use the new /get-team endpoint with query param
+  const response = await api.get(`/api/teams/get-team?team_name=${teamName}`)
   return response.data
 }
 
