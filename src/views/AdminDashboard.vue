@@ -166,6 +166,108 @@
 
         <!-- Analytics Section -->
         <div v-if="showAnalytics" class="space-y-6">
+          <!-- Trend Charts Section -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <!-- Monthly Trends Chart -->
+            <div class="card">
+              <div class="card-header">
+                <h3 class="text-lg font-medium">📈 Monthly Efficiency Trends</h3>
+              </div>
+              <div class="card-body">
+                <div class="h-64">
+                  <TrendChart
+                    v-if="monthlyTrendsData.datasets.length > 0"
+                    chart-id="monthly-trends"
+                    type="line"
+                    :data="monthlyTrendsData"
+                    :options="chartOptions.line"
+                  />
+                  <div v-else class="flex items-center justify-center h-full text-gray-500">
+                    <div class="text-center">
+                      <div class="text-4xl mb-2">📊</div>
+                      <p>No monthly trend data available</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Daily Activity Chart -->
+            <div class="card">
+              <div class="card-header">
+                <h3 class="text-lg font-medium">📅 Daily Activity (Last 30 Days)</h3>
+              </div>
+              <div class="card-body">
+                <div class="h-64">
+                  <TrendChart
+                    v-if="dailyTrendsData.datasets.length > 0"
+                    chart-id="daily-trends"
+                    type="bar"
+                    :data="dailyTrendsData"
+                    :options="chartOptions.bar"
+                  />
+                  <div v-else class="flex items-center justify-center h-full text-gray-500">
+                    <div class="text-center">
+                      <div class="text-4xl mb-2">📈</div>
+                      <p>No daily activity data available</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Team Performance and Category Charts -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <!-- Team Performance Chart -->
+            <div class="card">
+              <div class="card-header">
+                <h3 class="text-lg font-medium">👥 Team Performance Comparison</h3>
+              </div>
+              <div class="card-body">
+                <div class="h-64">
+                  <TrendChart
+                    v-if="teamPerformanceData.datasets.length > 0"
+                    chart-id="team-performance"
+                    type="bar"
+                    :data="teamPerformanceData"
+                    :options="chartOptions.bar"
+                  />
+                  <div v-else class="flex items-center justify-center h-full text-gray-500">
+                    <div class="text-center">
+                      <div class="text-4xl mb-2">👥</div>
+                      <p>No team performance data available</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Category Breakdown Chart -->
+            <div class="card">
+              <div class="card-header">
+                <h3 class="text-lg font-medium">🎯 Efficiency by Category</h3>
+              </div>
+              <div class="card-body">
+                <div class="h-64">
+                  <TrendChart
+                    v-if="categoryBreakdownData.datasets.length > 0"
+                    chart-id="category-breakdown"
+                    type="doughnut"
+                    :data="categoryBreakdownData"
+                    :options="chartOptions.doughnut"
+                  />
+                  <div v-else class="flex items-center justify-center h-full text-gray-500">
+                    <div class="text-center">
+                      <div class="text-4xl mb-2">🎯</div>
+                      <p>No category breakdown data available</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Enhanced Analytics Overview -->
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <!-- Efficiency Rate Card -->
@@ -531,11 +633,13 @@ import { getAdminDashboard, getOverallAnalytics } from '../services/api'
 import { useAuthStore } from '../stores/auth'
 import { useRouter } from 'vue-router'
 import Navigation from '../components/Navigation.vue'
+import TrendChart from '../components/TrendChart.vue'
 
 export default {
   name: 'AdminDashboard',
   components: {
-    Navigation
+    Navigation,
+    TrendChart
   },
   setup() {
     const authStore = useAuthStore()
@@ -553,7 +657,11 @@ export default {
         total: 0
       },
       averageEfficiency: null,
-      copilotUsageRate: null
+      copilotUsageRate: null,
+      monthlyTrends: [],
+      dailyTrends: [],
+      categoryBreakdown: [],
+      efficiencyTrends: []
     })
     
     const recentActivity = ref([])
@@ -561,6 +669,255 @@ export default {
     const showAnalytics = ref(false)
     const loading = ref(true)
     const error = ref(null)
+
+    // Chart data
+    const monthlyTrendsData = ref({ labels: [], datasets: [] })
+    const dailyTrendsData = ref({ labels: [], datasets: [] })
+    const teamPerformanceData = ref({ labels: [], datasets: [] })
+    const categoryBreakdownData = ref({ labels: [], datasets: [] })
+
+    // Chart options
+    const chartOptions = {
+      line: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'top',
+          },
+          tooltip: {
+            mode: 'index',
+            intersect: false,
+            callbacks: {
+              label: function(context) {
+                if (context.dataset.label === 'Hours Saved') {
+                  return `${context.dataset.label}: ${context.parsed.y.toFixed(1)}h`
+                } else if (context.dataset.label === 'Efficiency Rate') {
+                  return `${context.dataset.label}: ${context.parsed.y.toFixed(1)}%`
+                }
+                return `${context.dataset.label}: ${context.parsed.y}`
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            display: true,
+            grid: {
+              color: 'rgba(0, 0, 0, 0.1)'
+            }
+          },
+          y: {
+            type: 'linear',
+            display: true,
+            position: 'left',
+            beginAtZero: true,
+            grid: {
+              color: 'rgba(0, 0, 0, 0.1)'
+            }
+          },
+          y1: {
+            type: 'linear',
+            display: true,
+            position: 'right',
+            beginAtZero: true,
+            grid: {
+              drawOnChartArea: false,
+            },
+          }
+        }
+      },
+      bar: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'top',
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                if (context.dataset.label === 'Hours Saved') {
+                  return `${context.dataset.label}: ${context.parsed.y.toFixed(1)}h`
+                } else if (context.dataset.label === 'Efficiency Rate') {
+                  return `${context.dataset.label}: ${context.parsed.y.toFixed(1)}%`
+                }
+                return `${context.dataset.label}: ${context.parsed.y}`
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            display: true,
+            grid: {
+              color: 'rgba(0, 0, 0, 0.1)'
+            }
+          },
+          y: {
+            display: true,
+            beginAtZero: true,
+            grid: {
+              color: 'rgba(0, 0, 0, 0.1)'
+            }
+          }
+        }
+      },
+      doughnut: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'right',
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const total = context.dataset.data.reduce((a, b) => a + b, 0)
+                const percentage = ((context.parsed / total) * 100).toFixed(1)
+                return `${context.label}: ${context.parsed.toFixed(1)}h (${percentage}%)`
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // Process chart data
+    const processChartData = () => {
+      // Monthly trends
+      if (analytics.value.monthlyTrends && analytics.value.monthlyTrends.length > 0) {
+        const monthlyLabels = analytics.value.monthlyTrends.map(trend => {
+          const date = new Date(trend.month)
+          return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+        })
+        
+        monthlyTrendsData.value = {
+          labels: monthlyLabels,
+          datasets: [
+            {
+              label: 'Hours Saved',
+              data: analytics.value.monthlyTrends.map(trend => trend.time_saved),
+              borderColor: 'rgb(59, 130, 246)',
+              backgroundColor: 'rgba(59, 130, 246, 0.1)',
+              yAxisID: 'y',
+              tension: 0.4
+            },
+            {
+              label: 'Efficiency Rate',
+              data: analytics.value.monthlyTrends.map(trend => trend.efficiency_rate),
+              borderColor: 'rgb(16, 185, 129)',
+              backgroundColor: 'rgba(16, 185, 129, 0.1)',
+              yAxisID: 'y1',
+              tension: 0.4
+            }
+          ]
+        }
+      }
+
+      // Daily trends
+      if (analytics.value.dailyTrends && analytics.value.dailyTrends.length > 0) {
+        const dailyLabels = analytics.value.dailyTrends.map(trend => {
+          const date = new Date(trend.date)
+          return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+        })
+        
+        dailyTrendsData.value = {
+          labels: dailyLabels,
+          datasets: [
+            {
+              label: 'Hours Saved',
+              data: analytics.value.dailyTrends.map(trend => trend.time_saved),
+              backgroundColor: 'rgba(59, 130, 246, 0.8)',
+              borderColor: 'rgb(59, 130, 246)',
+              borderWidth: 1
+            }
+          ]
+        }
+      }
+
+      // Team performance
+      if (analytics.value.teamStats && analytics.value.teamStats.length > 0) {
+        teamPerformanceData.value = {
+          labels: analytics.value.teamStats.map(team => team.name),
+          datasets: [
+            {
+              label: 'Hours Saved',
+              data: analytics.value.teamStats.map(team => team.hours),
+              backgroundColor: [
+                'rgba(59, 130, 246, 0.8)',
+                'rgba(16, 185, 129, 0.8)',
+                'rgba(245, 158, 11, 0.8)',
+                'rgba(239, 68, 68, 0.8)',
+                'rgba(139, 92, 246, 0.8)'
+              ],
+              borderColor: [
+                'rgb(59, 130, 246)',
+                'rgb(16, 185, 129)',
+                'rgb(245, 158, 11)',
+                'rgb(239, 68, 68)',
+                'rgb(139, 92, 246)'
+              ],
+              borderWidth: 1
+            }
+          ]
+        }
+      }
+
+      // Category breakdown
+      if (analytics.value.categoryBreakdown && analytics.value.categoryBreakdown.length > 0) {
+        categoryBreakdownData.value = {
+          labels: analytics.value.categoryBreakdown.map(cat => cat.category),
+          datasets: [
+            {
+              data: analytics.value.categoryBreakdown.map(cat => cat.time_saved),
+              backgroundColor: [
+                'rgba(59, 130, 246, 0.8)',
+                'rgba(16, 185, 129, 0.8)',
+                'rgba(245, 158, 11, 0.8)',
+                'rgba(239, 68, 68, 0.8)',
+                'rgba(139, 92, 246, 0.8)',
+                'rgba(236, 72, 153, 0.8)'
+              ],
+              borderColor: [
+                'rgb(59, 130, 246)',
+                'rgb(16, 185, 129)',
+                'rgb(245, 158, 11)',
+                'rgb(239, 68, 68)',
+                'rgb(139, 92, 246)',
+                'rgb(236, 72, 153)'
+              ],
+              borderWidth: 1
+            }
+          ]
+        }
+      } else if (topCategories.value && topCategories.value.length > 0) {
+        // Fallback to topCategories if no category breakdown
+        categoryBreakdownData.value = {
+          labels: topCategories.value.map(cat => cat.name),
+          datasets: [
+            {
+              data: topCategories.value.map(cat => cat.hours),
+              backgroundColor: [
+                'rgba(59, 130, 246, 0.8)',
+                'rgba(16, 185, 129, 0.8)',
+                'rgba(245, 158, 11, 0.8)',
+                'rgba(239, 68, 68, 0.8)',
+                'rgba(139, 92, 246, 0.8)'
+              ],
+              borderColor: [
+                'rgb(59, 130, 246)',
+                'rgb(16, 185, 129)',
+                'rgb(245, 158, 11)',
+                'rgb(239, 68, 68)',
+                'rgb(139, 92, 246)'
+              ],
+              borderWidth: 1
+            }
+          ]
+        }
+      }
+    }
 
     const loadAnalytics = async () => {
       try {
@@ -614,7 +971,11 @@ export default {
             total: data.total_entries || 0
           },
           averageEfficiency: data.average_efficiency,
-          copilotUsageRate: data.copilot_usage_rate
+          copilotUsageRate: data.copilot_usage_rate,
+          monthlyTrends: data.monthly_trends || [],
+          dailyTrends: data.daily_trends || [],
+          categoryBreakdown: data.category_breakdown || [],
+          efficiencyTrends: data.efficiency_trends || []
         }
         
         // Generate recent activity from actual data
@@ -705,6 +1066,7 @@ export default {
         console.log('Final analytics:', analytics.value)
         console.log('Recent activities:', recentActivity.value)
         
+        processChartData()
       } catch (err) {
         console.error('Failed to load analytics:', err)
         
@@ -742,7 +1104,11 @@ export default {
             total: 45
           },
           averageEfficiency: null,
-          copilotUsageRate: null
+          copilotUsageRate: null,
+          monthlyTrends: [],
+          dailyTrends: [],
+          categoryBreakdown: [],
+          efficiencyTrends: []
         }
         
         recentActivity.value = [
@@ -779,6 +1145,8 @@ export default {
           { name: 'Testing', hours: 18.5 },
           { name: 'API Development', hours: 9.5 }
         ]
+        
+        processChartData()
       } finally {
         loading.value = false
       }
@@ -812,7 +1180,12 @@ export default {
       loading,
       error,
       formatTimeAgo,
-      loadAnalytics
+      loadAnalytics,
+      monthlyTrendsData,
+      dailyTrendsData,
+      teamPerformanceData,
+      categoryBreakdownData,
+      chartOptions
     }
   }
 }
