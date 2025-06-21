@@ -44,6 +44,24 @@
               placeholder="Enter your team name"
             />
           </div>
+
+          <div>
+            <label for="password" class="block text-sm font-medium text-gray-700">
+              Password
+            </label>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              required
+              v-model="formData.password"
+              class="input-field"
+              placeholder="Enter your password"
+            />
+            <p class="text-xs text-gray-500 mt-1">
+              If you don't have a password set, use any value to continue
+            </p>
+          </div>
         </div>
 
         <div v-if="error" class="text-red-600 text-sm text-center">
@@ -74,8 +92,8 @@
 </template>
 
 <script>
-import { ref, reactive } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, reactive, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { UserIcon } from '@heroicons/vue/24/solid'
 import { useAuthStore } from '../stores/auth'
 
@@ -86,23 +104,50 @@ export default {
   },
   setup() {
     const router = useRouter()
+    const route = useRoute()
     const authStore = useAuthStore()
     
     const formData = reactive({
       developer_name: '',
-      team_name: ''
+      team_name: '',
+      password: ''
     })
     
     const error = ref('')
     const loading = ref(false)
+
+    // Load data from URL parameters on component mount
+    onMounted(() => {
+      const urlDeveloper = route.query.developer || ''
+      const urlTeam = route.query.team || ''
+      
+      // Check if we have unknown user/team from URL redirect
+      if (urlDeveloper === 'Unknown Developer' || urlTeam === 'Unknown Team') {
+        error.value = 'Please enter your correct developer name and team name to continue.'
+        // Clear the unknown values
+        formData.developer_name = ''
+        formData.team_name = ''
+      } else {
+        // Pre-populate form with URL parameters if available
+        if (urlDeveloper) {
+          formData.developer_name = decodeURIComponent(urlDeveloper)
+        }
+        if (urlTeam) {
+          formData.team_name = decodeURIComponent(urlTeam)
+        }
+      }
+    })
 
     const handleLogin = async () => {
       loading.value = true
       error.value = ''
 
       try {
-        await authStore.engineerLogin(formData.team_name, formData.developer_name)
-        router.push('/engineer')
+        await authStore.engineerLogin(formData.team_name, formData.developer_name, formData.password)
+        
+        // Redirect to the intended destination or default engineer dashboard
+        const redirectTo = route.query.redirect || '/engineer'
+        router.push(redirectTo)
       } catch (err) {
         error.value = err.message
       }

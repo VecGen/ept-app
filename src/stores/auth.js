@@ -40,10 +40,10 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    async engineerLogin(teamName, developerName) {
+    async engineerLogin(teamName, developerName, password) {
       try {
         console.log('Attempting engineer login...', { teamName, developerName })
-        const response = await engineerLogin(teamName, developerName)
+        const response = await engineerLogin(teamName, developerName, password)
         console.log('Engineer login response:', response)
         
         this.token = response.access_token

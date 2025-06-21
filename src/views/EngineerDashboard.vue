@@ -142,13 +142,14 @@
 
 <script>
 import { ref, computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
 export default {
   name: 'EngineerDashboard',
   setup() {
     const route = useRoute()
+    const router = useRouter()
     const authStore = useAuthStore()
     const showAnalytics = ref(false)
     const entries = ref([])
@@ -170,6 +171,27 @@ export default {
       }
       return route.query.dev || 'Unknown Developer'
     })
+
+    // Check for unknown users and redirect to login
+    const checkAndRedirectUnknownUser = () => {
+      if (teamName.value === 'Unknown Team' || developerName.value === 'Unknown Developer') {
+        console.log('Unknown user detected, redirecting to login:', { 
+          team: teamName.value, 
+          developer: developerName.value 
+        })
+        
+        router.push({
+          name: 'EngineerLogin',
+          query: {
+            team: teamName.value,
+            developer: developerName.value,
+            redirect: route.fullPath
+          }
+        })
+        return true
+      }
+      return false
+    }
 
     const totalTimeSaved = computed(() => {
       return dashboardStats.value.total_time_saved || 0
@@ -235,8 +257,8 @@ export default {
         loading.value = true
         error.value = null
         
-        if (!teamName.value || !developerName.value || teamName.value === 'Unknown Team' || developerName.value === 'Unknown Developer') {
-          error.value = 'Team and developer names are required. Please log in or access this page with proper parameters.'
+        // Check for unknown users and redirect if needed
+        if (checkAndRedirectUnknownUser()) {
           return
         }
         

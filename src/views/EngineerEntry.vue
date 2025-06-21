@@ -267,6 +267,23 @@ export default {
       }
       return route.query.dev || ''
     })
+
+    // Check and redirect if unknown user detected
+    const checkAndRedirectUnknownUser = () => {
+      if (teamName.value === 'Unknown Team' || developerName.value === 'Unknown Developer') {
+        console.log('Unknown user detected, redirecting to login...')
+        router.push({
+          name: 'EngineerLogin',
+          query: {
+            redirect: route.path,
+            team: route.query.team,
+            dev: route.query.dev
+          }
+        })
+        return true
+      }
+      return false
+    }
     
     // Form data
     const form = ref({
@@ -409,8 +426,8 @@ export default {
     async function submitEntry() {
       if (!canSubmit.value) return
       
-      if (!teamName.value || !developerName.value) {
-        error.value = 'Missing team or developer information. Please log in or access this page through the proper link.'
+      // Check for unknown users and redirect if needed
+      if (checkAndRedirectUnknownUser()) {
         return
       }
 
@@ -469,6 +486,10 @@ export default {
     }
 
     onMounted(() => {
+      // Check for unknown users and redirect if needed
+      if (checkAndRedirectUnknownUser()) {
+        return
+      }
       loadSettings()
     })
 

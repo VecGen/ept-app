@@ -82,10 +82,11 @@ export const adminLogin = async (password) => {
   return response.data
 }
 
-export const engineerLogin = async (teamName, developerName) => {
+export const engineerLogin = async (teamName, developerName, password) => {
   const response = await api.post('/api/auth/engineer/login', {
     team_name: teamName,
-    developer_name: developerName
+    developer_name: developerName,
+    password: password
   })
   const { access_token, user_type } = response.data
   localStorage.setItem('auth_token', access_token)
