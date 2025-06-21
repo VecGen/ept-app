@@ -171,10 +171,97 @@
 
       <!-- Analytics Section -->
       <div v-if="showAnalytics" class="space-y-6">
+        <!-- Enhanced Analytics Overview -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <!-- Efficiency Rate Card -->
+          <div class="card">
+            <div class="card-body">
+              <div class="flex items-center">
+                <div class="flex-shrink-0">
+                  <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                    <span class="text-green-600 text-lg">⚡</span>
+                  </div>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt class="text-sm font-medium text-gray-500 truncate">Avg Efficiency Rate</dt>
+                    <dd class="text-lg font-medium text-gray-900">
+                      {{ analytics.averageEfficiency ? analytics.averageEfficiency.toFixed(1) + '%' : 'N/A' }}
+                    </dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Copilot Usage Card -->
+          <div class="card">
+            <div class="card-body">
+              <div class="flex items-center">
+                <div class="flex-shrink-0">
+                  <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                    <span class="text-blue-600 text-lg">🤖</span>
+                  </div>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt class="text-sm font-medium text-gray-500 truncate">Copilot Usage</dt>
+                    <dd class="text-lg font-medium text-gray-900">
+                      {{ analytics.copilotUsageRate ? analytics.copilotUsageRate.toFixed(1) + '%' : 'N/A' }}
+                    </dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Hours per Entry Card -->
+          <div class="card">
+            <div class="card-body">
+              <div class="flex items-center">
+                <div class="flex-shrink-0">
+                  <div class="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                    <span class="text-orange-600 text-lg">📊</span>
+                  </div>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt class="text-sm font-medium text-gray-500 truncate">Avg Hours/Entry</dt>
+                    <dd class="text-lg font-medium text-gray-900">
+                      {{ analytics.totalEntries > 0 ? (analytics.totalHoursSaved / analytics.totalEntries).toFixed(1) + 'h' : 'N/A' }}
+                    </dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Active Projects Card -->
+          <div class="card">
+            <div class="card-body">
+              <div class="flex items-center">
+                <div class="flex-shrink-0">
+                  <div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                    <span class="text-purple-600 text-lg">🚀</span>
+                  </div>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt class="text-sm font-medium text-gray-500 truncate">Active Projects</dt>
+                    <dd class="text-lg font-medium text-gray-900">
+                      {{ analytics.teamStats.length || 0 }}
+                    </dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Team Performance -->
         <div class="card">
           <div class="card-header">
-            <h3 class="text-lg font-medium">📊 Team Performance</h3>
+            <h3 class="text-lg font-medium">📊 Team Performance Analytics</h3>
           </div>
           <div class="card-body">
             <div class="overflow-x-auto">
@@ -196,6 +283,9 @@
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Developers
                     </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Productivity
+                    </th>
                   </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
@@ -210,10 +300,21 @@
                       {{ team.entries }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {{ (team.hours / team.entries).toFixed(1) }}h
+                      {{ team.entries > 0 ? (team.hours / team.entries).toFixed(1) + 'h' : 'N/A' }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {{ team.developers || 'N/A' }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <div class="flex items-center">
+                        <div class="w-16 bg-gray-200 rounded-full h-2 mr-2">
+                          <div class="bg-blue-600 h-2 rounded-full" 
+                               :style="{ width: Math.min(100, (team.hours / (analytics.totalHoursSaved || 1) * 100)) + '%' }"></div>
+                        </div>
+                        <span class="text-xs text-gray-500">
+                          {{ analytics.totalHoursSaved > 0 ? ((team.hours / analytics.totalHoursSaved) * 100).toFixed(0) + '%' : '0%' }}
+                        </span>
+                      </div>
                     </td>
                   </tr>
                 </tbody>
@@ -261,6 +362,72 @@
 
         <!-- Top Categories -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Developer Productivity Insights -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="text-lg font-medium">👨‍💻 Developer Productivity Insights</h3>
+            </div>
+            <div class="card-body">
+              <div class="space-y-4">
+                <!-- Copilot Usage Breakdown -->
+                <div>
+                  <div class="flex justify-between items-center mb-2">
+                    <span class="text-sm font-medium text-gray-700">Copilot Usage Distribution</span>
+                    <span class="text-sm text-gray-500">{{ analytics.copilotUsage.total }} total entries</span>
+                  </div>
+                  <div class="w-full bg-gray-200 rounded-full h-3">
+                    <div class="bg-blue-600 h-3 rounded-full flex">
+                      <div class="bg-blue-600 rounded-l-full" 
+                           :style="{ width: analytics.copilotUsage.total > 0 ? (analytics.copilotUsage.withCopilot / analytics.copilotUsage.total * 100) + '%' : '0%' }">
+                      </div>
+                    </div>
+                  </div>
+                  <div class="flex justify-between text-xs text-gray-600 mt-1">
+                    <span>With Copilot: {{ analytics.copilotUsage.withCopilot }}</span>
+                    <span>Without: {{ analytics.copilotUsage.withoutCopilot }}</span>
+                  </div>
+                </div>
+
+                <!-- Team Distribution -->
+                <div>
+                  <div class="flex justify-between items-center mb-2">
+                    <span class="text-sm font-medium text-gray-700">Team Activity Distribution</span>
+                    <span class="text-sm text-gray-500">{{ analytics.activeTeams }} teams active</span>
+                  </div>
+                  <div class="space-y-2">
+                    <div v-for="team in analytics.teamStats.slice(0, 3)" :key="team.name" class="flex items-center justify-between">
+                      <span class="text-xs text-gray-600 truncate w-20">{{ team.name }}</span>
+                      <div class="flex-1 mx-2">
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                          <div class="bg-gradient-to-r from-blue-500 to-purple-600 h-2 rounded-full" 
+                               :style="{ width: analytics.totalEntries > 0 ? (team.entries / analytics.totalEntries * 100) + '%' : '0%' }">
+                          </div>
+                        </div>
+                      </div>
+                      <span class="text-xs text-gray-500 w-12 text-right">{{ team.entries }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Efficiency Metrics -->
+                <div v-if="analytics.averageEfficiency">
+                  <div class="flex justify-between items-center mb-2">
+                    <span class="text-sm font-medium text-gray-700">Overall Efficiency</span>
+                    <span class="text-sm font-semibold" :class="analytics.averageEfficiency > 50 ? 'text-green-600' : 'text-yellow-600'">
+                      {{ analytics.averageEfficiency.toFixed(1) }}%
+                    </span>
+                  </div>
+                  <div class="w-full bg-gray-200 rounded-full h-2">
+                    <div class="h-2 rounded-full" 
+                         :class="analytics.averageEfficiency > 70 ? 'bg-green-500' : analytics.averageEfficiency > 50 ? 'bg-yellow-500' : 'bg-red-500'"
+                         :style="{ width: Math.min(100, analytics.averageEfficiency) + '%' }">
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div class="card">
             <div class="card-header">
               <h3 class="text-lg font-medium">🎯 Top Categories by Hours Saved</h3>
@@ -273,35 +440,85 @@
                   <div class="flex items-center space-x-2">
                     <div class="w-20 bg-gray-200 rounded-full h-2">
                       <div class="bg-blue-600 h-2 rounded-full" 
-                           :style="{ width: (category.hours / topCategories[0].hours * 100) + '%' }"></div>
+                           :style="{ width: topCategories.length > 0 && topCategories[0].hours > 0 ? (category.hours / topCategories[0].hours * 100) + '%' : '0%' }"></div>
                     </div>
                     <span class="text-sm text-gray-500 w-12 text-right">{{ category.hours.toFixed(1) }}h</span>
                   </div>
                 </div>
+                
+                <!-- Show message if no categories -->
+                <div v-if="topCategories.length === 0" class="text-center py-8 text-gray-500">
+                  <div class="text-4xl mb-2">📊</div>
+                  <p class="text-sm">No category data available yet</p>
+                  <p class="text-xs">Categories will appear as teams log efficiency entries</p>
+                </div>
               </div>
             </div>
           </div>
+        </div>
 
-          <div class="card">
-            <div class="card-header">
-              <h3 class="text-lg font-medium">🤖 Copilot Adoption</h3>
-            </div>
-            <div class="card-body">
+        <!-- Time Trends and Insights -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="text-lg font-medium">📈 Productivity Trends & Insights</h3>
+          </div>
+          <div class="card-body">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <!-- Trend Analysis -->
               <div class="text-center">
-                <div class="text-3xl font-bold text-green-600 mb-2">
-                  {{ ((analytics.copilotUsage?.withCopilot || 0) / (analytics.copilotUsage?.total || 1) * 100).toFixed(1) }}%
+                <div class="text-2xl font-bold text-blue-600">
+                  {{ analytics.totalEntries > 0 ? Math.round(analytics.totalHoursSaved / analytics.totalEntries * 10) / 10 : 0 }}h
                 </div>
-                <p class="text-sm text-gray-600 mb-4">of entries use Copilot</p>
-                
-                <div class="space-y-2">
-                  <div class="flex justify-between text-sm">
-                    <span class="text-gray-600">With Copilot:</span>
-                    <span class="font-medium">{{ analytics.copilotUsage?.withCopilot || 0 }} entries</span>
-                  </div>
-                  <div class="flex justify-between text-sm">
-                    <span class="text-gray-600">Without Copilot:</span>
-                    <span class="font-medium">{{ analytics.copilotUsage?.withoutCopilot || 0 }} entries</span>
-                  </div>
+                <div class="text-sm text-gray-500">Average Hours Saved per Entry</div>
+                <div class="text-xs text-gray-400 mt-1">
+                  {{ analytics.totalEntries > 0 ? 'Consistent productivity' : 'Start tracking to see trends' }}
+                </div>
+              </div>
+              
+              <!-- Velocity Metric -->
+              <div class="text-center">
+                <div class="text-2xl font-bold text-green-600">
+                  {{ analytics.activeDevelopers > 0 ? Math.round(analytics.totalEntries / analytics.activeDevelopers * 10) / 10 : 0 }}
+                </div>
+                <div class="text-sm text-gray-500">Entries per Developer</div>
+                <div class="text-xs text-gray-400 mt-1">
+                  {{ analytics.activeDevelopers > 0 ? 'Team engagement metric' : 'Add developers to see metrics' }}
+                </div>
+              </div>
+              
+              <!-- Impact Metric -->
+              <div class="text-center">
+                <div class="text-2xl font-bold text-purple-600">
+                  {{ analytics.activeDevelopers > 0 ? Math.round(analytics.totalHoursSaved / analytics.activeDevelopers * 10) / 10 : 0 }}h
+                </div>
+                <div class="text-sm text-gray-500">Hours Saved per Developer</div>
+                <div class="text-xs text-gray-400 mt-1">
+                  {{ analytics.activeDevelopers > 0 ? 'Individual impact score' : 'Track entries to calculate impact' }}
+                </div>
+              </div>
+            </div>
+            
+            <!-- Quick Insights -->
+            <div class="mt-6 p-4 bg-blue-50 rounded-lg">
+              <h4 class="text-sm font-medium text-blue-900 mb-2">💡 Quick Insights</h4>
+              <div class="space-y-1 text-sm text-blue-800">
+                <div v-if="analytics.copilotUsageRate > 70">
+                  <span class="font-medium">High Copilot Adoption:</span> {{ analytics.copilotUsageRate.toFixed(0) }}% usage rate indicates strong AI tool integration
+                </div>
+                <div v-else-if="analytics.copilotUsageRate > 0">
+                  <span class="font-medium">Copilot Opportunity:</span> {{ (100 - analytics.copilotUsageRate).toFixed(0) }}% of entries could benefit from AI assistance
+                </div>
+                <div v-if="analytics.teamStats.length > 0">
+                  <span class="font-medium">Top Performer:</span> {{ analytics.teamStats[0]?.name }} leads with {{ analytics.teamStats[0]?.hours.toFixed(1) }}h saved
+                </div>
+                <div v-if="analytics.totalEntries > 20">
+                  <span class="font-medium">Good Tracking:</span> {{ analytics.totalEntries }} entries show consistent productivity measurement
+                </div>
+                <div v-else-if="analytics.totalEntries > 0">
+                  <span class="font-medium">Building Momentum:</span> {{ analytics.totalEntries }} entries logged - keep tracking for better insights
+                </div>
+                <div v-else>
+                  <span class="font-medium">Getting Started:</span> Start logging efficiency entries to see personalized insights here
                 </div>
               </div>
             </div>
@@ -334,7 +551,9 @@ export default {
         withCopilot: 0,
         withoutCopilot: 0,
         total: 0
-      }
+      },
+      averageEfficiency: null,
+      copilotUsageRate: null
     })
     
     const recentActivity = ref([])
@@ -383,31 +602,33 @@ export default {
           totalEntries: data.total_entries || 0,
           activeTeams: data.teams_count || 0,
           activeDevelopers: data.developers_count || 0,
-          teamStats: (data.team_breakdown || []).map(team => ({
+          teamStats: (data.team_stats || []).map(team => ({
             name: extractTeamName(team.team_name),
-            hours: team.time_saved || 0,
-            entries: team.entries || 0,
+            hours: team.total_time_saved || 0,
+            entries: team.total_entries || 0,
             developers: team.developers_count || 0
           })),
           copilotUsage: {
             withCopilot: Math.round((data.copilot_usage_rate || 0) * (data.total_entries || 0) / 100),
             withoutCopilot: (data.total_entries || 0) - Math.round((data.copilot_usage_rate || 0) * (data.total_entries || 0) / 100),
             total: data.total_entries || 0
-          }
+          },
+          averageEfficiency: data.average_efficiency,
+          copilotUsageRate: data.copilot_usage_rate
         }
         
         // Generate recent activity from actual data
         const activities = []
         
         // Add activities for each team
-        if (data.team_breakdown && data.team_breakdown.length > 0) {
-          data.team_breakdown.forEach((team, index) => {
+        if (data.team_stats && data.team_stats.length > 0) {
+          data.team_stats.forEach((team, index) => {
             const teamName = extractTeamName(team.team_name)
-            if (team.entries > 0) {
+            if (team.total_entries > 0) {
               activities.push({
                 id: `team-${index}`,
                 icon: '📊',
-                description: `${teamName} team logged ${team.entries} efficiency entries (${(team.time_saved || 0).toFixed(1)} hours saved)`,
+                description: `${teamName} team logged ${team.total_entries} efficiency entries (${(team.total_time_saved || 0).toFixed(1)} hours saved)`,
                 timestamp: new Date(Date.now() - (index + 1) * 2 * 60 * 60 * 1000) // Stagger timestamps
               })
             }
@@ -470,13 +691,13 @@ export default {
         }))
         
         // If no monthly trends, create categories from team data
-        if (topCategories.value.length === 0 && data.team_breakdown) {
-          topCategories.value = data.team_breakdown
-            .sort((a, b) => (b.time_saved || 0) - (a.time_saved || 0))
+        if (topCategories.value.length === 0 && data.team_stats) {
+          topCategories.value = data.team_stats
+            .sort((a, b) => (b.total_time_saved || 0) - (a.total_time_saved || 0))
             .slice(0, 5)
             .map(team => ({
               name: extractTeamName(team.team_name),
-              hours: team.time_saved || 0
+              hours: team.total_time_saved || 0
             }))
         }
         
@@ -519,7 +740,9 @@ export default {
             withCopilot: 38,
             withoutCopilot: 7,
             total: 45
-          }
+          },
+          averageEfficiency: null,
+          copilotUsageRate: null
         }
         
         recentActivity.value = [
