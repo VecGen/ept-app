@@ -91,13 +91,6 @@
               :collapsed="collapsed && !isMobile"
               @click="handleNavClick"
             />
-            <NavItem 
-              icon="🔐"
-              label="Access Control"
-              route="/admin/access"
-              :collapsed="collapsed && !isMobile"
-              @click="handleNavClick"
-            />
           </template>
 
           <!-- Engineer Navigation -->

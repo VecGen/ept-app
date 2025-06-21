@@ -76,7 +76,15 @@ export default {
     
     const isActive = computed(() => {
       if (props.isAction || !props.route) return false
-      return route.path === props.route || route.path.startsWith(props.route + '/')
+      
+      // For exact matching - only highlight if the current path exactly matches the route
+      // Special handling for admin dashboard
+      if (props.route === '/admin') {
+        return route.path === '/admin'
+      }
+      
+      // For other routes, check exact match or immediate child routes
+      return route.path === props.route
     })
 
     const handleClick = (event) => {
