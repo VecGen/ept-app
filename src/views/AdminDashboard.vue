@@ -1189,4 +1189,26 @@ export default {
     }
   }
 }
-</script> 
+</script>
+
+<style scoped>
+/* Admin Dashboard Specific Styles */
+.max-w-7xl {
+  position: relative;
+  z-index: 1;
+}
+
+/* Header styling to ensure it's above any overlapping elements */
+.bg-gradient-to-r.from-purple-600.to-blue-600 {
+  position: relative;
+  z-index: 100;
+}
+
+/* Ensure mobile compatibility */
+@media (max-width: 1023px) {
+  .max-w-7xl.mx-auto.px-4.sm\\:px-6.lg\\:px-8.py-8 {
+    margin-top: 5rem; /* Space for mobile menu button */
+    padding: 1rem;
+  }
+}
+</style> 

@@ -152,7 +152,7 @@
     <button
       v-if="isMobile"
       @click="toggleSidebar"
-      class="fixed top-4 left-4 z-50 p-3 bg-gray-900 hover:bg-gray-800 text-white rounded-lg shadow-lg lg:hidden transition-colors duration-200"
+      class="mobile-menu-button fixed top-4 left-4 z-50 p-3 bg-gray-900 hover:bg-gray-800 text-white rounded-lg shadow-lg transition-colors duration-200"
     >
       <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
         <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
@@ -288,4 +288,23 @@ export default {
     }
   }
 }
-</script> 
+</script>
+
+<style scoped>
+/* Mobile menu button visibility control */
+@media (min-width: 1024px) {
+  .mobile-menu-button {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+}
+
+@media (max-width: 1023px) {
+  .mobile-menu-button {
+    display: block !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+  }
+}
+</style> 

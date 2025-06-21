@@ -266,14 +266,56 @@ export default {
         
         console.log('Loading dashboard for:', { team: queryTeam, developer: queryDev })
         
-        // Call the API
+        // First, get detailed team information
+        let teamDetails = null
+        try {
+          // Import the getTeamsPublicTest function
+          const { getTeamsPublicTest } = await import('../services/api')
+          const teamsResponse = await getTeamsPublicTest()
+          console.log('Teams response:', teamsResponse)
+          
+          // Handle different response structures
+          const allTeams = teamsResponse.teams || teamsResponse.data || teamsResponse
+          console.log('All teams:', allTeams)
+          
+          // Find the current team - handle both object and array structures
+          let currentTeam = null
+          if (Array.isArray(allTeams)) {
+            currentTeam = allTeams.find(team => team.name === queryTeam)
+          } else if (typeof allTeams === 'object') {
+            currentTeam = allTeams[queryTeam]
+          }
+          
+          console.log('Current team found:', currentTeam)
+          
+          if (currentTeam) {
+            teamDetails = {
+              name: queryTeam,
+              description: currentTeam.description || 'A dynamic team focused on efficiency and innovation',
+              developers_count: currentTeam.developers ? currentTeam.developers.length : (currentTeam.members ? currentTeam.members.length : 1),
+              developers: currentTeam.developers || currentTeam.members || []
+            }
+            console.log('Team details created:', teamDetails)
+          }
+        } catch (teamError) {
+          console.warn('Could not fetch team details:', teamError)
+          // Create fallback team details
+          teamDetails = {
+            name: queryTeam,
+            description: 'A productive team working on efficiency improvements',
+            developers_count: 1, // At least the current developer
+            developers: [{ name: queryDev }]
+          }
+        }
+        
+        // Call the dashboard API
         const response = await getEngineerDashboard(queryTeam, queryDev)
         console.log('Dashboard response:', response)
         
         const data = response.data || response
         
-        // Update team and developer info
-        team.value = {
+        // Update team and developer info with detailed information
+        team.value = teamDetails || {
           name: data.team_name || queryTeam || 'Unknown Team',
           description: data.team_description || 'No description available',
           developers_count: data.team_developers_count || 0
@@ -390,18 +432,33 @@ export default {
 <style scoped>
 /* Engineer Dashboard Styles */
 .engineer-dashboard {
-  min-height: 100vh;
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
   background: #f8fafc;
-  padding: 1rem;
+  min-height: 100vh;
+  position: relative;
+  z-index: 1; /* Ensure dashboard content is above navigation elements */
 }
 
+/* Add top margin on mobile to avoid mobile menu button overlap */
+@media (max-width: 1023px) {
+  .engineer-dashboard {
+    margin-top: 5rem; /* Space for mobile menu button */
+    padding: 1rem;
+  }
+}
+
+/* Header */
 .dashboard-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: white;
   border-radius: 1rem;
   padding: 2rem;
   margin-bottom: 2rem;
-  color: white;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+  position: relative;
+  z-index: 100; /* Much higher z-index to ensure it's above any other elements */
 }
 
 .header-content {
@@ -415,6 +472,10 @@ export default {
 .dashboard-title {
   font-size: 2rem;
   font-weight: 700;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   margin: 0;
 }
 
