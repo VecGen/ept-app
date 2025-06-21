@@ -359,52 +359,130 @@ export default {
         console.log('Auth token exists:', !!localStorage.getItem('auth_token'))
         
         // Load admin dashboard data from API
-        const dashboardResponse = await getAdminDashboard()
-        console.log('Dashboard response:', dashboardResponse)
+        const response = await getAdminDashboard()
+        console.log('Dashboard response:', response)
         
-        // Try to load overall analytics (gracefully handle if endpoint doesn't exist)
-        let analyticsResponse = null
-        try {
-          analyticsResponse = await getOverallAnalytics({
-            start_date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 days ago
-            end_date: new Date().toISOString().split('T')[0] // today
-          })
-          console.log('Analytics response:', analyticsResponse)
-        } catch (analyticsError) {
-          console.warn('Analytics endpoint not available yet:', analyticsError.response?.status)
-          // Continue without analytics data - will use fallback values
+        // Extract data from the response - handle both direct data and wrapped data
+        const data = response.data || response
+        
+        // Helper function to extract team name from various formats
+        const extractTeamName = (teamNameField) => {
+          if (typeof teamNameField === 'string') {
+            return teamNameField
+          } else if (typeof teamNameField === 'object' && teamNameField !== null) {
+            // Handle cases like {"": "Direct Lens"} or {"name": "Team Name"}
+            const values = Object.values(teamNameField)
+            return values.length > 0 ? values[0] : 'Unknown Team'
+          }
+          return 'Unknown Team'
         }
         
-        // Update analytics with real data (with fallbacks for missing analytics)
-        const analyticsData = analyticsResponse?.data || {}
+        // Update analytics with real data
         analytics.value = {
-          totalHoursSaved: analyticsData.total_time_saved || 0,
-          totalEntries: analyticsData.total_entries || 0,
-          activeTeams: analyticsData.teams_count || dashboardResponse.teams_count || 0,
-          activeDevelopers: analyticsData.developers_count || dashboardResponse.developers_count || 0,
-          teamStats: (analyticsData.team_breakdown || []).map(team => ({
-            name: team.team_name,
-            hours: team.time_saved,
-            entries: team.entries,
-            developers: team.developers_count
+          totalHoursSaved: data.total_time_saved || 0,
+          totalEntries: data.total_entries || 0,
+          activeTeams: data.teams_count || 0,
+          activeDevelopers: data.developers_count || 0,
+          teamStats: (data.team_breakdown || []).map(team => ({
+            name: extractTeamName(team.team_name),
+            hours: team.time_saved || 0,
+            entries: team.entries || 0,
+            developers: team.developers_count || 0
           })),
           copilotUsage: {
-            withCopilot: Math.round((analyticsData.copilot_usage_rate || 0) * (analyticsData.total_entries || 0) / 100),
-            withoutCopilot: (analyticsData.total_entries || 0) - Math.round((analyticsData.copilot_usage_rate || 0) * (analyticsData.total_entries || 0) / 100),
-            total: analyticsData.total_entries || 0
+            withCopilot: Math.round((data.copilot_usage_rate || 0) * (data.total_entries || 0) / 100),
+            withoutCopilot: (data.total_entries || 0) - Math.round((data.copilot_usage_rate || 0) * (data.total_entries || 0) / 100),
+            total: data.total_entries || 0
           }
         }
         
-        // Set recent activity from API (fallback to static data if not available)
-        recentActivity.value = dashboardResponse.recent_activity || []
+        // Generate recent activity from actual data
+        const activities = []
+        
+        // Add activities for each team
+        if (data.team_breakdown && data.team_breakdown.length > 0) {
+          data.team_breakdown.forEach((team, index) => {
+            const teamName = extractTeamName(team.team_name)
+            if (team.entries > 0) {
+              activities.push({
+                id: `team-${index}`,
+                icon: '📊',
+                description: `${teamName} team logged ${team.entries} efficiency entries (${(team.time_saved || 0).toFixed(1)} hours saved)`,
+                timestamp: new Date(Date.now() - (index + 1) * 2 * 60 * 60 * 1000) // Stagger timestamps
+              })
+            }
+          })
+        }
+        
+        // Add monthly trend activities
+        if (data.monthly_trends && data.monthly_trends.length > 0) {
+          data.monthly_trends.forEach((trend, index) => {
+            activities.push({
+              id: `trend-${index}`,
+              icon: '📈',
+              description: `${trend.month}: ${trend.entries} entries with ${(trend.time_saved || 0).toFixed(1)} hours saved (${(trend.efficiency_rate || 0).toFixed(1)}% efficiency)`,
+              timestamp: new Date(Date.now() - (activities.length + index + 1) * 3 * 60 * 60 * 1000)
+            })
+          })
+        }
+        
+        // Add general system activities if we have data
+        if (data.total_entries > 0) {
+          activities.push({
+            id: 'system-copilot',
+            icon: '🤖',
+            description: `Copilot usage rate: ${(data.copilot_usage_rate || 0).toFixed(1)}% across all teams`,
+            timestamp: new Date(Date.now() - activities.length * 60 * 60 * 1000)
+          })
+          
+          activities.push({
+            id: 'system-efficiency',
+            icon: '⚡',
+            description: `Overall efficiency rate: ${(data.average_efficiency || 0).toFixed(1)}% with ${(data.total_time_saved || 0).toFixed(1)} hours saved`,
+            timestamp: new Date(Date.now() - activities.length * 60 * 60 * 1000)
+          })
+        }
+        
+        // Fallback activities if no real data
+        if (activities.length === 0) {
+          activities.push(
+            {
+              id: 'welcome',
+              icon: '🎉',
+              description: 'Welcome to the Efficiency Tracking Dashboard!',
+              timestamp: new Date(Date.now() - 60 * 60 * 1000)
+            },
+            {
+              id: 'setup',
+              icon: '⚙️',
+              description: 'System is ready to track efficiency entries',
+              timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000)
+            }
+          )
+        }
+        
+        recentActivity.value = activities.slice(0, 10) // Limit to 10 most recent
         
         // Set top categories from monthly trends if available
-        topCategories.value = (analyticsData.monthly_trends || []).slice(0, 5).map(trend => ({
+        topCategories.value = (data.monthly_trends || []).slice(0, 5).map(trend => ({
           name: trend.month,
-          hours: trend.time_saved
+          hours: trend.time_saved || 0
         }))
         
+        // If no monthly trends, create categories from team data
+        if (topCategories.value.length === 0 && data.team_breakdown) {
+          topCategories.value = data.team_breakdown
+            .sort((a, b) => (b.time_saved || 0) - (a.time_saved || 0))
+            .slice(0, 5)
+            .map(team => ({
+              name: extractTeamName(team.team_name),
+              hours: team.time_saved || 0
+            }))
+        }
+        
         console.log('Dashboard data loaded successfully')
+        console.log('Final analytics:', analytics.value)
+        console.log('Recent activities:', recentActivity.value)
         
       } catch (err) {
         console.error('Failed to load analytics:', err)
