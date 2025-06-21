@@ -1,135 +1,179 @@
 <template>
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <!-- Header -->
-    <div class="mb-8">
-      <div class="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-6 text-white">
-        <h1 class="text-2xl font-bold mb-2">👋 Welcome, {{ developerName }}!</h1>
-        <p class="text-blue-100">Team: {{ teamName }}</p>
-      </div>
-    </div>
-
-    <!-- Error Message -->
-    <div v-if="error" class="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
-      <div class="flex">
-        <div class="flex-shrink-0">
-          <span class="text-red-500 text-lg">⚠️</span>
-        </div>
-        <div class="ml-3">
-          <p class="text-sm text-red-800">{{ error }}</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Quick Stats -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-      <div class="stat-card">
-        <div class="stat-card-content">
-          <div class="stat-card-title">Total Time Saved</div>
-          <div class="stat-card-value">{{ totalTimeSaved.toFixed(1) }}h</div>
-        </div>
-      </div>
-      
-      <div class="stat-card">
-        <div class="stat-card-content">
-          <div class="stat-card-title">Total Entries</div>
-          <div class="stat-card-value">{{ totalEntries }}</div>
-        </div>
-      </div>
-      
-      <div class="stat-card">
-        <div class="stat-card-content">
-          <div class="stat-card-title">This Week</div>
-          <div class="stat-card-value">{{ thisWeekSaved.toFixed(1) }}h</div>
-        </div>
-      </div>
-      
-      <div class="stat-card">
-        <div class="stat-card-content">
-          <div class="stat-card-title">Avg Efficiency</div>
-          <div class="stat-card-value">{{ averageEfficiency.toFixed(1) }}%</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Loading State -->
-    <div v-if="loading" class="text-center py-8">
-      <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      <p class="mt-2 text-gray-600">Loading dashboard...</p>
-    </div>
-
-    <!-- Action Buttons -->
-    <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-      <div class="card">
-        <div class="card-body text-center">
-          <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span class="text-2xl">📝</span>
+  <Navigation>
+    <div class="engineer-dashboard">
+      <!-- Dashboard Header -->
+      <div class="dashboard-header">
+        <div class="header-content">
+          <h1 class="dashboard-title">Engineer Dashboard</h1>
+          <div class="header-actions">
+            <button 
+              @click="loadDashboard" 
+              :disabled="loading"
+              class="btn btn-primary"
+            >
+              <span v-if="loading">Loading...</span>
+              <span v-else>Refresh</span>
+            </button>
           </div>
-          <h3 class="text-lg font-semibold text-gray-900 mb-2">Add New Entry</h3>
-          <p class="text-gray-600 mb-4">Log your weekly efficiency gains</p>
-          <router-link 
-            :to="`/engineer/entry?team=${teamName}&dev=${developerName}`" 
-            class="btn-primary"
-          >
-            Add Entry
-          </router-link>
         </div>
       </div>
-      
-      <div class="card">
-        <div class="card-body text-center">
-          <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span class="text-2xl">📊</span>
-          </div>
-          <h3 class="text-lg font-semibold text-gray-900 mb-2">View Analytics</h3>
-          <p class="text-gray-600 mb-4">See your progress over time</p>
-          <button @click="showAnalytics = !showAnalytics" class="btn-secondary">
-            {{ showAnalytics ? 'Hide' : 'Show' }} Analytics
-          </button>
-        </div>
-      </div>
-    </div>
 
-    <!-- Analytics Section -->
-    <div v-if="showAnalytics" class="space-y-6">
-      <!-- Category Breakdown -->
-      <div class="card">
-        <div class="card-header">
-          <h3 class="text-lg font-medium">Efficiency by Category</h3>
+      <!-- Error Message -->
+      <div v-if="error" class="error-message">
+        <div class="error-content">
+          <span class="error-icon">⚠️</span>
+          <span>{{ error }}</span>
+          <button @click="loadDashboard" class="retry-btn">Retry</button>
         </div>
-        <div class="card-body">
-          <div v-if="categoryData.length === 0" class="text-center text-gray-500 py-8">
-            No data available yet. Start logging your efficiency gains!
+      </div>
+
+      <!-- Loading State -->
+      <div v-if="loading && !error" class="loading-container">
+        <div class="loading-spinner"></div>
+        <p>Loading your dashboard...</p>
+      </div>
+
+      <!-- Dashboard Content -->
+      <div v-if="!loading && !error" class="dashboard-content">
+        <!-- Team Info Card -->
+        <div class="info-card team-info">
+          <div class="card-header">
+            <h2 class="card-title">
+              <span class="card-icon">👥</span>
+              Team Information
+            </h2>
           </div>
-          <div v-else class="space-y-3">
-            <div v-for="category in categoryData" :key="category.name" class="flex justify-between items-center">
-              <span class="text-sm font-medium text-gray-700">{{ category.name }}</span>
-              <span class="text-sm text-gray-500">{{ category.hours.toFixed(1) }}h</span>
+          <div class="card-content">
+            <div class="team-details">
+              <div class="detail-item">
+                <span class="detail-label">Team:</span>
+                <span class="detail-value">{{ team.name || 'Not assigned' }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Description:</span>
+                <span class="detail-value">{{ team.description || 'No description available' }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Your Role:</span>
+                <span class="detail-value">{{ developer.name || 'Engineer' }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Team Members:</span>
+                <span class="detail-value">{{ team.developers_count || 0 }} members</span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- Recent Entries -->
-      <div class="card">
-        <div class="card-header">
-          <h3 class="text-lg font-medium">Recent Entries</h3>
-        </div>
-        <div class="card-body">
-          <div v-if="recentEntries.length === 0" class="text-center text-gray-500 py-8">
-            No entries yet.
+        <!-- Quick Stats -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon">📝</div>
+            <div class="stat-content">
+              <div class="stat-value">{{ stats.totalEntries }}</div>
+              <div class="stat-label">Total Entries</div>
+            </div>
           </div>
-          <div v-else class="space-y-4">
-            <div v-for="entry in recentEntries" :key="entry.id" 
-                 class="border-l-4 border-blue-500 pl-4 py-2">
-              <div class="flex justify-between items-start">
-                <div>
-                  <p class="font-medium text-gray-900">{{ entry.storyId || 'No ID' }}</p>
-                  <p class="text-sm text-gray-600">{{ entry.category }}</p>
-                  <p class="text-xs text-gray-500">{{ formatDate(entry.weekStart) }}</p>
+          <div class="stat-card">
+            <div class="stat-icon">⏰</div>
+            <div class="stat-content">
+              <div class="stat-value">{{ stats.totalHours }}h</div>
+              <div class="stat-label">Hours Saved</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">🔥</div>
+            <div class="stat-content">
+              <div class="stat-value">{{ stats.thisWeek }}</div>
+              <div class="stat-label">This Week</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">🤖</div>
+            <div class="stat-content">
+              <div class="stat-value">{{ stats.copilotUsage }}%</div>
+              <div class="stat-label">AI Usage</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Entries -->
+        <div class="info-card recent-entries">
+          <div class="card-header">
+            <h2 class="card-title">
+              <span class="card-icon">📊</span>
+              Recent Efficiency Entries
+            </h2>
+            <router-link to="/engineer/entry" class="btn btn-secondary">
+              Add New Entry
+            </router-link>
+          </div>
+          <div class="card-content">
+            <div v-if="recentEntries.length === 0" class="empty-state">
+              <div class="empty-icon">📝</div>
+              <h3>No entries yet</h3>
+              <p>Start tracking your efficiency gains by adding your first entry.</p>
+              <router-link to="/engineer/entry" class="btn btn-primary">
+                Add Your First Entry
+              </router-link>
+            </div>
+            <div v-else class="entries-list">
+              <div 
+                v-for="entry in recentEntries" 
+                :key="entry.id"
+                class="entry-item"
+              >
+                <div class="entry-header">
+                  <div class="entry-title">{{ entry.task_description || 'Efficiency Entry' }}</div>
+                  <div class="entry-time">{{ formatDate(entry.date) }}</div>
                 </div>
-                <div class="text-right">
-                  <p class="font-medium text-green-600">+{{ entry.efficiencyGained.toFixed(1) }}h</p>
-                  <p class="text-xs text-gray-500">{{ entry.copilotUsed ? 'With Copilot' : 'No Copilot' }}</p>
+                <div class="entry-details">
+                  <span class="entry-hours">{{ entry.time_saved || 0 }}h saved</span>
+                  <span class="entry-copilot" v-if="entry.copilot_used">
+                    <span class="copilot-icon">🤖</span>
+                    AI Assisted
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Performance Insights -->
+        <div class="info-card insights">
+          <div class="card-header">
+            <h2 class="card-title">
+              <span class="card-icon">📈</span>
+              Performance Insights
+            </h2>
+          </div>
+          <div class="card-content">
+            <div class="insights-grid">
+              <div class="insight-item">
+                <div class="insight-metric">{{ insights.weeklyAverage }}h</div>
+                <div class="insight-label">Weekly Average</div>
+                <div class="insight-trend positive" v-if="insights.weeklyTrend > 0">
+                  ↗️ +{{ insights.weeklyTrend }}h from last week
+                </div>
+                <div class="insight-trend negative" v-else-if="insights.weeklyTrend < 0">
+                  ↘️ {{ insights.weeklyTrend }}h from last week
+                </div>
+                <div class="insight-trend neutral" v-else>
+                  ➡️ Same as last week
+                </div>
+              </div>
+              <div class="insight-item">
+                <div class="insight-metric">{{ insights.efficiency }}%</div>
+                <div class="insight-label">Efficiency Rate</div>
+                <div class="insight-description">
+                  {{ insights.efficiencyMessage }}
+                </div>
+              </div>
+              <div class="insight-item">
+                <div class="insight-metric">{{ insights.aiUsage }}%</div>
+                <div class="insight-label">AI Tool Usage</div>
+                <div class="insight-description">
+                  {{ insights.aiMessage }}
                 </div>
               </div>
             </div>
@@ -137,119 +181,79 @@
         </div>
       </div>
     </div>
-  </div>
+  </Navigation>
 </template>
 
 <script>
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
+import { getEngineerDashboard } from '../services/api'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import Navigation from '../components/Navigation.vue'
 
 export default {
   name: 'EngineerDashboard',
+  components: {
+    Navigation
+  },
   setup() {
     const route = useRoute()
     const router = useRouter()
     const authStore = useAuthStore()
-    const showAnalytics = ref(false)
-    const entries = ref([])
-    const dashboardStats = ref({})
+    
+    const team = ref({})
+    const developer = ref({})
+    const stats = ref({
+      totalEntries: 0,
+      totalHours: 0,
+      thisWeek: 0,
+      copilotUsage: 0
+    })
+    const recentEntries = ref([])
+    const insights = ref({
+      weeklyAverage: 0,
+      weeklyTrend: 0,
+      efficiency: 0,
+      efficiencyMessage: '',
+      aiUsage: 0,
+      aiMessage: ''
+    })
+    
     const loading = ref(true)
     const error = ref(null)
 
-    // Get team and developer info from auth store first, then URL parameters
-    const teamName = computed(() => {
-      if (authStore.isAuthenticated && authStore.user?.team) {
-        return authStore.user.team
-      }
-      return route.query.team || 'Unknown Team'
-    })
-
-    const developerName = computed(() => {
-      if (authStore.isAuthenticated && authStore.user?.name) {
-        return authStore.user.name
-      }
-      return route.query.dev || 'Unknown Developer'
-    })
-
-    // Check for unknown users and redirect to login
-    const checkAndRedirectUnknownUser = () => {
-      if (teamName.value === 'Unknown Team' || developerName.value === 'Unknown Developer') {
-        console.log('Unknown user detected, redirecting to login:', { 
-          team: teamName.value, 
-          developer: developerName.value 
-        })
-        
-        router.push({
-          name: 'EngineerLogin',
-          query: {
-            team: teamName.value,
-            developer: developerName.value,
-            redirect: route.fullPath
-          }
-        })
-        return true
-      }
-      return false
+    // Get team and developer info from auth store first, then route params as fallback
+    const getCurrentTeam = () => {
+      return authStore.user?.team || route.query.team || 'Unknown Team'
+    }
+    
+    const getCurrentDeveloper = () => {
+      return authStore.user?.name || route.query.dev || 'Unknown Developer'
     }
 
-    const totalTimeSaved = computed(() => {
-      return dashboardStats.value.total_time_saved || 0
-    })
-
-    const totalEntries = computed(() => {
-      return dashboardStats.value.total_entries || 0
-    })
-
-    const thisWeekSaved = computed(() => {
-      // Calculate this week's savings from entries since API doesn't provide it
-      const now = new Date()
-      const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay() + 1))
-      startOfWeek.setHours(0, 0, 0, 0)
+    // Check for unknown user and redirect if needed
+    const checkAndRedirectUnknownUser = () => {
+      const queryTeam = route.query.team
+      const queryDev = route.query.dev
       
-      return entries.value
-        .filter(entry => {
-          const entryDate = new Date(entry.Week || entry.week_start)
-          return entryDate >= startOfWeek
-        })
-        .reduce((sum, entry) => sum + (entry.Efficiency_Gained_Hours || 0), 0)
-    })
-
-    const averageEfficiency = computed(() => {
-      return dashboardStats.value.average_efficiency || 0
-    })
-
-    const categoryData = computed(() => {
-      const categories = {}
-      entries.value.forEach(entry => {
-        const cat = entry.Category || 'Other'
-        if (!categories[cat]) {
-          categories[cat] = 0
+      if (queryTeam === 'Unknown Team' || queryDev === 'Unknown Developer' || 
+          (!queryTeam && team.value.name === 'Unknown Team') || 
+          (!queryDev && developer.value.name === 'Unknown Developer')) {
+        
+        console.log('Unknown user detected, redirecting to login...')
+        
+        // Build redirect URL with current query params
+        const redirectQuery = {
+          redirect: 'dashboard',
+          ...(queryTeam && { team: queryTeam }),
+          ...(queryDev && { dev: queryDev })
         }
-        categories[cat] += entry.Efficiency_Gained_Hours || 0
-      })
-      
-      return Object.entries(categories)
-        .map(([name, hours]) => ({ name, hours }))
-        .sort((a, b) => b.hours - a.hours)
-    })
-
-    const recentEntries = computed(() => {
-      return [...entries.value]
-        .sort((a, b) => new Date(b.Week || b.week_start) - new Date(a.Week || a.week_start))
-        .slice(0, 5)
-        .map(entry => ({
-          id: entry.Story_ID || entry.story_id || Math.random().toString(36),
-          storyId: entry.Story_ID || entry.story_id,
-          category: entry.Category || entry.category,
-          weekStart: entry.Week || entry.week_start,
-          efficiencyGained: entry.Efficiency_Gained_Hours || entry.efficiency_gained || 0,
-          copilotUsed: entry.Copilot_Used === 'Yes' || entry.copilot_used === 'Yes'
-        }))
-    })
-
-    const formatDate = (dateString) => {
-      return new Date(dateString).toLocaleDateString()
+        
+        router.push({
+          path: '/engineer/login',
+          query: redirectQuery
+        })
+      }
     }
 
     const loadDashboard = async () => {
@@ -257,52 +261,108 @@ export default {
         loading.value = true
         error.value = null
         
-        // Check for unknown users and redirect if needed
-        if (checkAndRedirectUnknownUser()) {
-          return
+        const queryTeam = getCurrentTeam()
+        const queryDev = getCurrentDeveloper()
+        
+        console.log('Loading dashboard for:', { team: queryTeam, developer: queryDev })
+        
+        // Call the API
+        const response = await getEngineerDashboard(queryTeam, queryDev)
+        console.log('Dashboard response:', response)
+        
+        const data = response.data || response
+        
+        // Update team and developer info
+        team.value = {
+          name: data.team_name || queryTeam || 'Unknown Team',
+          description: data.team_description || 'No description available',
+          developers_count: data.team_developers_count || 0
         }
         
-        console.log('Loading engineer dashboard data for:', { team: teamName.value, developer: developerName.value })
-        
-        const response = await fetch(`https://mnwpivaen5.us-east-1.awsapprunner.com/api/engineer/dashboard?developer_name=${encodeURIComponent(developerName.value)}&team_name=${encodeURIComponent(teamName.value)}`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        })
-        
-        if (!response.ok) {
-          throw new Error(`API returned ${response.status}: ${response.statusText}`)
+        developer.value = {
+          name: data.developer_name || queryDev || 'Unknown Developer'
         }
         
-        const data = await response.json()
-        console.log('Engineer dashboard response:', data)
+        // Check for unknown user and redirect if needed
+        checkAndRedirectUnknownUser()
         
-        // API returns data directly at root level, not nested
-        dashboardStats.value = {
-          total_time_saved: data.total_time_saved || 0,
-          total_entries: data.total_entries || 0,
-          average_efficiency: data.average_efficiency || 0
+        // Use the correct field names from the API response
+        const entries = data.recent_entries || []
+        const totalHours = data.total_time_saved || 0
+        const totalEntries = data.total_entries || 0
+        const averageEfficiency = data.average_efficiency || 0
+        
+        // Calculate this week entries
+        const thisWeekEntries = entries.filter(entry => {
+          const entryDate = new Date(entry.Week || entry.Timestamp)
+          const weekStart = new Date()
+          weekStart.setDate(weekStart.getDate() - weekStart.getDay())
+          return entryDate >= weekStart
+        }).length
+        
+        // Calculate Copilot usage
+        const copilotEntries = entries.filter(entry => entry.Copilot_Used === 'Yes').length
+        const copilotUsage = entries.length > 0 ? Math.round((copilotEntries / entries.length) * 100) : 0
+        
+        stats.value = {
+          totalEntries: totalEntries,
+          totalHours: totalHours.toFixed(1),
+          thisWeek: thisWeekEntries,
+          copilotUsage: copilotUsage
         }
         
-        // Store recent entries for category analysis and recent entries display
-        entries.value = data.recent_entries || []
+        // Set recent entries with proper field mapping
+        recentEntries.value = entries
+          .sort((a, b) => new Date(b.Timestamp || b.Week) - new Date(a.Timestamp || a.Week))
+          .slice(0, 5)
+          .map(entry => ({
+            id: entry.Story_ID || Math.random().toString(36).substr(2, 9),
+            task_description: `${entry.Story_ID || 'Entry'} - ${entry.Category || 'Task'}`,
+            date: entry.Week || entry.Timestamp,
+            time_saved: entry.Efficiency_Gained_Hours || 0,
+            copilot_used: entry.Copilot_Used === 'Yes',
+            category: entry.Category,
+            notes: entry.Notes
+          }))
         
-        console.log('Engineer dashboard data loaded successfully:', {
-          stats: dashboardStats.value,
-          entriesCount: entries.value.length
-        })
+        // Calculate insights with actual data
+        const weeklyAverage = totalEntries > 0 ? (totalHours / Math.max(1, Math.ceil(totalEntries / 7))).toFixed(1) : 0
+        const efficiency = Math.round(averageEfficiency)
+        
+        insights.value = {
+          weeklyAverage: weeklyAverage,
+          weeklyTrend: 0, // Would need historical data to calculate
+          efficiency: efficiency,
+          efficiencyMessage: efficiency > 80 ? 'Excellent efficiency!' : efficiency > 60 ? 'Good efficiency' : 'Room for improvement',
+          aiUsage: copilotUsage,
+          aiMessage: copilotUsage > 70 ? 'High AI adoption' : copilotUsage > 30 ? 'Moderate AI usage' : 'Consider using AI tools more'
+        }
         
       } catch (err) {
-        console.error('Failed to load engineer dashboard:', err)
-        error.value = `Failed to load dashboard data: ${err.message || 'Unknown error'}`
+        console.error('Failed to load dashboard:', err)
+        error.value = err.response?.data?.detail || err.message || 'Failed to load dashboard'
         
-        // Fallback to empty data
-        entries.value = []
-        dashboardStats.value = {}
-        
+        // Check for specific error cases that might indicate unknown user
+        if (err.response?.status === 404) {
+          checkAndRedirectUnknownUser()
+        }
       } finally {
         loading.value = false
+      }
+    }
+
+    const formatDate = (dateString) => {
+      if (!dateString) return 'Unknown date'
+      
+      try {
+        const date = new Date(dateString)
+        return date.toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric'
+        })
+      } catch (err) {
+        return 'Invalid date'
       }
     }
 
@@ -311,19 +371,401 @@ export default {
     })
 
     return {
-      showAnalytics,
-      teamName,
-      developerName,
-      totalTimeSaved,
-      totalEntries,
-      thisWeekSaved,
-      averageEfficiency,
-      categoryData,
+      team,
+      developer,
+      stats,
       recentEntries,
-      formatDate,
+      insights,
       loading,
-      error
+      error,
+      getCurrentTeam,
+      getCurrentDeveloper,
+      loadDashboard,
+      formatDate
     }
   }
 }
-</script> 
+</script>
+
+<style scoped>
+/* Engineer Dashboard Styles */
+.engineer-dashboard {
+  min-height: 100vh;
+  background: #f8fafc;
+  padding: 1rem;
+}
+
+.dashboard-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 1rem;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  color: white;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.dashboard-title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.header-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.btn {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.2s;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.btn-primary:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: white;
+  color: #667eea;
+  border: 1px solid #e2e8f0;
+}
+
+.btn-secondary:hover {
+  background: #f1f5f9;
+}
+
+.error-message {
+  background: #fee2e2;
+  border: 1px solid #fecaca;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-bottom: 2rem;
+}
+
+.error-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  color: #dc2626;
+}
+
+.retry-btn {
+  background: #dc2626;
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.25rem;
+  border: none;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.retry-btn:hover {
+  background: #b91c1c;
+}
+
+.loading-container {
+  text-align: center;
+  padding: 3rem;
+  color: #64748b;
+}
+
+.loading-spinner {
+  width: 2rem;
+  height: 2rem;
+  border: 2px solid #e2e8f0;
+  border-top: 2px solid #667eea;
+  border-radius: 50%;
+  margin: 0 auto 1rem;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.dashboard-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.info-card {
+  background: white;
+  border-radius: 1rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+}
+
+.card-header {
+  background: #f8fafc;
+  padding: 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.card-content {
+  padding: 1.5rem;
+}
+
+.team-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.detail-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #64748b;
+}
+
+.detail-value {
+  font-size: 1rem;
+  color: #1e293b;
+  font-weight: 500;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.stat-icon {
+  font-size: 2rem;
+  width: 3rem;
+  height: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 1rem;
+  color: white;
+}
+
+.stat-content {
+  flex: 1;
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 0.25rem;
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem;
+  color: #64748b;
+}
+
+.empty-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.empty-state h3 {
+  font-size: 1.25rem;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+}
+
+.empty-state p {
+  margin-bottom: 1.5rem;
+}
+
+.entries-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.entry-item {
+  padding: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  background: #f8fafc;
+}
+
+.entry-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  margin-bottom: 0.5rem;
+}
+
+.entry-title {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.entry-time {
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.entry-details {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  font-size: 0.875rem;
+}
+
+.entry-hours {
+  color: #059669;
+  font-weight: 500;
+}
+
+.entry-copilot {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: #7c3aed;
+}
+
+.insights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 2rem;
+}
+
+.insight-item {
+  text-align: center;
+}
+
+.insight-metric {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #667eea;
+  margin-bottom: 0.5rem;
+}
+
+.insight-label {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+}
+
+.insight-trend {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.insight-trend.positive {
+  color: #059669;
+}
+
+.insight-trend.negative {
+  color: #dc2626;
+}
+
+.insight-trend.neutral {
+  color: #64748b;
+}
+
+.insight-description {
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .engineer-dashboard {
+    padding: 0.5rem;
+  }
+  
+  .dashboard-header {
+    padding: 1.5rem;
+  }
+  
+  .dashboard-title {
+    font-size: 1.5rem;
+  }
+  
+  .header-content {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .insights-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .team-details {
+    grid-template-columns: 1fr;
+  }
+  
+  .entry-header {
+    flex-direction: column;
+    align-items: start;
+    gap: 0.5rem;
+  }
+}
+</style> 

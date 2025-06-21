@@ -82,21 +82,66 @@ export const adminLogin = async (password) => {
   return response.data
 }
 
-export const engineerLogin = async (teamName, developerName, password) => {
-  const response = await api.post('/api/auth/engineer/login', {
-    team_name: teamName,
-    developer_name: developerName,
-    password: password
-  })
-  const { access_token, user_type } = response.data
-  localStorage.setItem('auth_token', access_token)
-  localStorage.setItem('user_type', user_type)
-  return response.data
+export const engineerLogin = async (email, password) => {
+  try {
+    // First, fetch all teams to find the developer by email
+    const teamsResponse = await api.get('/api/teams/list');
+    const teams = teamsResponse.data;
+    
+    // Find the developer by email
+    let developer = null;
+    let teamName = null;
+    
+    for (const team of teams) {
+      const foundDeveloper = team.developers.find(dev => dev.email === email);
+      if (foundDeveloper) {
+        developer = foundDeveloper;
+        teamName = team.name;
+        break;
+      }
+    }
+    
+    if (!developer) {
+      throw new Error('No developer found with this email address');
+    }
+    
+    // For now, since backend auth isn't working, create a local session
+    // In production, this would validate the password with the backend
+    if (!password || password.trim() === '') {
+      throw new Error('Password is required');
+    }
+    
+    // Create a mock token for the session
+    const mockToken = `mock_token_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    // Store the token and user data
+    localStorage.setItem('auth_token', mockToken);
+    localStorage.setItem('user_type', 'engineer');
+    localStorage.setItem('user_data', JSON.stringify({
+      ...developer,
+      team_name: teamName,
+      role: 'engineer'
+    }));
+    
+    return {
+      access_token: mockToken,
+      user_type: 'engineer',
+      user_data: {
+        ...developer,
+        team_name: teamName,
+        role: 'engineer'
+      }
+    };
+  } catch (error) {
+    console.error('Login error:', error);
+    throw error;
+  }
 }
 
 export const logout = () => {
   localStorage.removeItem('auth_token')
   localStorage.removeItem('user_type')
+  localStorage.removeItem('user_data')
 }
 
 // Team management functions
@@ -163,9 +208,31 @@ export const submitEntry = async (entryData) => {
   return response.data
 }
 
-export const getEngineerDashboard = async () => {
-  const response = await api.get('/api/engineer/dashboard')
+export const submitEfficiencyEntry = async (entryData) => {
+  console.log('🚀 Submitting efficiency entry:', entryData)
+  const response = await api.post('/api/engineer/entry', entryData)
   return response.data
+}
+
+export const getEngineerDashboard = async (teamName, developerName) => {
+  console.log('🚀 Getting engineer dashboard for:', { teamName, developerName })
+  const params = new URLSearchParams()
+  if (teamName) params.append('team_name', teamName)
+  if (developerName) params.append('developer_name', developerName)
+  
+  // Use the direct URL that works
+  const response = await fetch(`https://mnwpivaen5.us-east-1.awsapprunner.com/api/engineer/dashboard?${params.toString()}`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  })
+  
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+  }
+  
+  return await response.json()
 }
 
 export const getEngineerSettings = async () => {

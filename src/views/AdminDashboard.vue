@@ -1,256 +1,116 @@
 <template>
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <!-- Header -->
-    <div class="mb-8">
-      <div class="bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg p-6 text-white">
-        <div class="flex justify-between items-start">
-          <div>
-            <h1 class="text-3xl font-bold mb-2">🎯 Admin Dashboard</h1>
-            <p class="text-purple-100">Welcome to the Efficiency Tracker admin panel</p>
-          </div>
-          <button 
-            @click="logout"
-            class="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg text-sm transition-colors duration-200"
-          >
-            Logout
-          </button>
-        </div>
-        
-        <!-- Refresh Button -->
-        <button 
-          @click="loadAnalytics" 
-          :disabled="loading"
-          class="mt-3 bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg text-sm transition-colors duration-200 disabled:opacity-50"
-        >
-          {{ loading ? 'Loading...' : 'Refresh Data' }}
-        </button>
-      </div>
-    </div>
-
-    <!-- Error Message -->
-    <div v-if="error" class="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
-      <div class="flex">
-        <div class="flex-shrink-0">
-          <span class="text-red-500 text-lg">⚠️</span>
-        </div>
-        <div class="ml-3">
-          <p class="text-sm text-red-800">{{ error }}</p>
-          <p class="text-xs text-red-600 mt-1">Showing fallback data for demonstration purposes.</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Loading State -->
-    <div v-if="loading" class="flex items-center justify-center py-12">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
-      <span class="ml-3 text-gray-600">Loading dashboard data...</span>
-    </div>
-
-    <!-- Dashboard Content -->
-    <div v-else>
-      <!-- Key Metrics -->
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div class="stat-card">
-          <div class="stat-card-content">
-            <div class="flex items-center">
-              <div class="flex-shrink-0">
-                <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                  <span class="text-green-600 text-lg">⏰</span>
-                </div>
-              </div>
-              <div class="ml-5 w-0 flex-1">
-                <dl>
-                  <dt class="text-sm font-medium text-gray-500 truncate">Total Hours Saved</dt>
-                  <dd class="text-lg font-medium text-gray-900">{{ analytics.totalHoursSaved.toFixed(1) }}h</dd>
-                </dl>
-              </div>
+  <Navigation>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <!-- Header -->
+      <div class="mb-8">
+        <div class="bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg p-6 text-white">
+          <div class="flex justify-between items-start">
+            <div>
+              <h1 class="text-3xl font-bold mb-2">🎯 Admin Dashboard</h1>
+              <p class="text-purple-100">Welcome to the Efficiency Tracker admin panel</p>
             </div>
-          </div>
-        </div>
-
-        <div class="stat-card">
-          <div class="stat-card-content">
-            <div class="flex items-center">
-              <div class="flex-shrink-0">
-                <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                  <span class="text-blue-600 text-lg">📝</span>
-                </div>
-              </div>
-              <div class="ml-5 w-0 flex-1">
-                <dl>
-                  <dt class="text-sm font-medium text-gray-500 truncate">Total Entries</dt>
-                  <dd class="text-lg font-medium text-gray-900">{{ analytics.totalEntries }}</dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="stat-card">
-          <div class="stat-card-content">
-            <div class="flex items-center">
-              <div class="flex-shrink-0">
-                <div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                  <span class="text-purple-600 text-lg">👥</span>
-                </div>
-              </div>
-              <div class="ml-5 w-0 flex-1">
-                <dl>
-                  <dt class="text-sm font-medium text-gray-500 truncate">Active Teams</dt>
-                  <dd class="text-lg font-medium text-gray-900">{{ analytics.activeTeams }}</dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="stat-card">
-          <div class="stat-card-content">
-            <div class="flex items-center">
-              <div class="flex-shrink-0">
-                <div class="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
-                  <span class="text-yellow-600 text-lg">👨‍💻</span>
-                </div>
-              </div>
-              <div class="ml-5 w-0 flex-1">
-                <dl>
-                  <dt class="text-sm font-medium text-gray-500 truncate">Active Developers</dt>
-                  <dd class="text-lg font-medium text-gray-900">{{ analytics.activeDevelopers }}</dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Quick Actions -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <router-link to="/admin/teams" class="card hover:shadow-lg transition-shadow duration-200">
-          <div class="card-body text-center">
-            <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
-              <span class="text-2xl">👥</span>
-            </div>
-            <h3 class="text-lg font-semibold text-gray-900 mb-2">Manage Teams</h3>
-            <p class="text-sm text-gray-600">Create teams, add developers, generate access links</p>
-          </div>
-        </router-link>
-
-        <router-link to="/admin/settings" class="card hover:shadow-lg transition-shadow duration-200">
-          <div class="card-body text-center">
-            <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
-              <span class="text-2xl">⚙️</span>
-            </div>
-            <h3 class="text-lg font-semibold text-gray-900 mb-2">System Settings</h3>
-            <p class="text-sm text-gray-600">Configure categories, efficiency areas, settings</p>
-          </div>
-        </router-link>
-
-        <router-link to="/admin/data" class="card hover:shadow-lg transition-shadow duration-200">
-          <div class="card-body text-center">
-            <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
-              <span class="text-2xl">📊</span>
-            </div>
-            <h3 class="text-lg font-semibold text-gray-900 mb-2">Data Management</h3>
-            <p class="text-sm text-gray-600">Export data, manage entries, generate reports</p>
-          </div>
-        </router-link>
-
-        <div class="card">
-          <div class="card-body text-center">
-            <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-3">
-              <span class="text-2xl">��</span>
-            </div>
-            <h3 class="text-lg font-semibold text-gray-900 mb-2">View Analytics</h3>
-            <p class="text-sm text-gray-600 mb-4">Detailed insights and trends</p>
-            <button @click="showAnalytics = !showAnalytics" class="btn-secondary text-sm">
-              {{ showAnalytics ? 'Hide' : 'Show' }} Details
+            
+            <!-- Refresh Button -->
+            <button 
+              @click="loadAnalytics" 
+              :disabled="loading"
+              class="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg text-sm transition-colors duration-200 disabled:opacity-50"
+            >
+              {{ loading ? 'Loading...' : 'Refresh Data' }}
             </button>
           </div>
         </div>
       </div>
 
-      <!-- Analytics Section -->
-      <div v-if="showAnalytics" class="space-y-6">
-        <!-- Enhanced Analytics Overview -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <!-- Efficiency Rate Card -->
-          <div class="card">
-            <div class="card-body">
+      <!-- Error Message -->
+      <div v-if="error" class="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+        <div class="flex">
+          <div class="flex-shrink-0">
+            <span class="text-red-500 text-lg">⚠️</span>
+          </div>
+          <div class="ml-3">
+            <p class="text-sm text-red-800">{{ error }}</p>
+            <p class="text-xs text-red-600 mt-1">Showing fallback data for demonstration purposes.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Loading State -->
+      <div v-if="loading" class="flex items-center justify-center py-12">
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+        <span class="ml-3 text-gray-600">Loading dashboard data...</span>
+      </div>
+
+      <!-- Dashboard Content -->
+      <div v-else>
+        <!-- Key Metrics -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div class="stat-card">
+            <div class="stat-card-content">
               <div class="flex items-center">
                 <div class="flex-shrink-0">
                   <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                    <span class="text-green-600 text-lg">⚡</span>
+                    <span class="text-green-600 text-lg">⏰</span>
                   </div>
                 </div>
                 <div class="ml-5 w-0 flex-1">
                   <dl>
-                    <dt class="text-sm font-medium text-gray-500 truncate">Avg Efficiency Rate</dt>
-                    <dd class="text-lg font-medium text-gray-900">
-                      {{ analytics.averageEfficiency ? analytics.averageEfficiency.toFixed(1) + '%' : 'N/A' }}
-                    </dd>
+                    <dt class="text-sm font-medium text-gray-500 truncate">Total Hours Saved</dt>
+                    <dd class="text-lg font-medium text-gray-900">{{ analytics.totalHoursSaved.toFixed(1) }}h</dd>
                   </dl>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Copilot Usage Card -->
-          <div class="card">
-            <div class="card-body">
+          <div class="stat-card">
+            <div class="stat-card-content">
               <div class="flex items-center">
                 <div class="flex-shrink-0">
                   <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                    <span class="text-blue-600 text-lg">🤖</span>
+                    <span class="text-blue-600 text-lg">📝</span>
                   </div>
                 </div>
                 <div class="ml-5 w-0 flex-1">
                   <dl>
-                    <dt class="text-sm font-medium text-gray-500 truncate">Copilot Usage</dt>
-                    <dd class="text-lg font-medium text-gray-900">
-                      {{ analytics.copilotUsageRate ? analytics.copilotUsageRate.toFixed(1) + '%' : 'N/A' }}
-                    </dd>
+                    <dt class="text-sm font-medium text-gray-500 truncate">Total Entries</dt>
+                    <dd class="text-lg font-medium text-gray-900">{{ analytics.totalEntries }}</dd>
                   </dl>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Hours per Entry Card -->
-          <div class="card">
-            <div class="card-body">
-              <div class="flex items-center">
-                <div class="flex-shrink-0">
-                  <div class="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
-                    <span class="text-orange-600 text-lg">📊</span>
-                  </div>
-                </div>
-                <div class="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt class="text-sm font-medium text-gray-500 truncate">Avg Hours/Entry</dt>
-                    <dd class="text-lg font-medium text-gray-900">
-                      {{ analytics.totalEntries > 0 ? (analytics.totalHoursSaved / analytics.totalEntries).toFixed(1) + 'h' : 'N/A' }}
-                    </dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Active Projects Card -->
-          <div class="card">
-            <div class="card-body">
+          <div class="stat-card">
+            <div class="stat-card-content">
               <div class="flex items-center">
                 <div class="flex-shrink-0">
                   <div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                    <span class="text-purple-600 text-lg">🚀</span>
+                    <span class="text-purple-600 text-lg">👥</span>
                   </div>
                 </div>
                 <div class="ml-5 w-0 flex-1">
                   <dl>
-                    <dt class="text-sm font-medium text-gray-500 truncate">Active Projects</dt>
-                    <dd class="text-lg font-medium text-gray-900">
-                      {{ analytics.teamStats.length || 0 }}
-                    </dd>
+                    <dt class="text-sm font-medium text-gray-500 truncate">Active Teams</dt>
+                    <dd class="text-lg font-medium text-gray-900">{{ analytics.activeTeams }}</dd>
+                  </dl>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-card-content">
+              <div class="flex items-center">
+                <div class="flex-shrink-0">
+                  <div class="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
+                    <span class="text-yellow-600 text-lg">👨‍💻</span>
+                  </div>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                  <dl>
+                    <dt class="text-sm font-medium text-gray-500 truncate">Active Developers</dt>
+                    <dd class="text-lg font-medium text-gray-900">{{ analytics.activeDevelopers }}</dd>
                   </dl>
                 </div>
               </div>
@@ -258,267 +118,403 @@
           </div>
         </div>
 
-        <!-- Team Performance -->
-        <div class="card">
-          <div class="card-header">
-            <h3 class="text-lg font-medium">📊 Team Performance Analytics</h3>
-          </div>
-          <div class="card-body">
-            <div class="overflow-x-auto">
-              <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                  <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Team
-                    </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Hours Saved
-                    </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Entries
-                    </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Avg per Entry
-                    </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Developers
-                    </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Productivity
-                    </th>
-                  </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                  <tr v-for="team in analytics.teamStats" :key="team.name">
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {{ team.name }}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-medium">
-                      {{ team.hours.toFixed(1) }}h
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {{ team.entries }}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {{ team.entries > 0 ? (team.hours / team.entries).toFixed(1) + 'h' : 'N/A' }}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {{ team.developers || 'N/A' }}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                      <div class="flex items-center">
-                        <div class="w-16 bg-gray-200 rounded-full h-2 mr-2">
-                          <div class="bg-blue-600 h-2 rounded-full" 
-                               :style="{ width: Math.min(100, (team.hours / (analytics.totalHoursSaved || 1) * 100)) + '%' }"></div>
-                        </div>
-                        <span class="text-xs text-gray-500">
-                          {{ analytics.totalHoursSaved > 0 ? ((team.hours / analytics.totalHoursSaved) * 100).toFixed(0) + '%' : '0%' }}
-                        </span>
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+        <!-- Quick Actions -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <router-link to="/admin/teams" class="card hover:shadow-lg transition-shadow duration-200">
+            <div class="card-body text-center">
+              <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <span class="text-2xl">👥</span>
+              </div>
+              <h3 class="text-lg font-semibold text-gray-900 mb-2">Manage Teams</h3>
+              <p class="text-sm text-gray-600">Create teams, add developers, generate access links</p>
             </div>
-          </div>
-        </div>
+          </router-link>
 
-        <!-- Recent Activity -->
-        <div class="card">
-          <div class="card-header">
-            <h3 class="text-lg font-medium">🕒 Recent Activity</h3>
-          </div>
-          <div class="card-body">
-            <div class="flow-root">
-              <ul class="-mb-8">
-                <li v-for="(activity, index) in recentActivity" :key="activity.id">
-                  <div class="relative pb-8">
-                    <span v-if="index !== recentActivity.length - 1" 
-                          class="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200" 
-                          aria-hidden="true"></span>
-                    <div class="relative flex space-x-3">
-                      <div>
-                        <span class="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center ring-8 ring-white">
-                          <span class="text-white text-sm">{{ activity.icon }}</span>
-                        </span>
-                      </div>
-                      <div class="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
-                        <div>
-                          <p class="text-sm text-gray-500">
-                            {{ activity.description }}
-                          </p>
-                        </div>
-                        <div class="text-right text-sm whitespace-nowrap text-gray-500">
-                          {{ formatTimeAgo(activity.timestamp) }}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </li>
-              </ul>
+          <router-link to="/admin/settings" class="card hover:shadow-lg transition-shadow duration-200">
+            <div class="card-body text-center">
+              <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <span class="text-2xl">⚙️</span>
+              </div>
+              <h3 class="text-lg font-semibold text-gray-900 mb-2">System Settings</h3>
+              <p class="text-sm text-gray-600">Configure categories, efficiency areas, settings</p>
             </div>
-          </div>
-        </div>
+          </router-link>
 
-        <!-- Top Categories -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <!-- Developer Productivity Insights -->
+          <router-link to="/admin/data" class="card hover:shadow-lg transition-shadow duration-200">
+            <div class="card-body text-center">
+              <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <span class="text-2xl">📊</span>
+              </div>
+              <h3 class="text-lg font-semibold text-gray-900 mb-2">Data Management</h3>
+              <p class="text-sm text-gray-600">Export data, manage entries, generate reports</p>
+            </div>
+          </router-link>
+
           <div class="card">
-            <div class="card-header">
-              <h3 class="text-lg font-medium">👨‍💻 Developer Productivity Insights</h3>
+            <div class="card-body text-center">
+              <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <span class="text-2xl"></span>
+              </div>
+              <h3 class="text-lg font-semibold text-gray-900 mb-2">View Analytics</h3>
+              <p class="text-sm text-gray-600 mb-4">Detailed insights and trends</p>
+              <button @click="showAnalytics = !showAnalytics" class="btn-secondary text-sm">
+                {{ showAnalytics ? 'Hide' : 'Show' }} Details
+              </button>
             </div>
-            <div class="card-body">
-              <div class="space-y-4">
-                <!-- Copilot Usage Breakdown -->
-                <div>
-                  <div class="flex justify-between items-center mb-2">
-                    <span class="text-sm font-medium text-gray-700">Copilot Usage Distribution</span>
-                    <span class="text-sm text-gray-500">{{ analytics.copilotUsage.total }} total entries</span>
-                  </div>
-                  <div class="w-full bg-gray-200 rounded-full h-3">
-                    <div class="bg-blue-600 h-3 rounded-full flex">
-                      <div class="bg-blue-600 rounded-l-full" 
-                           :style="{ width: analytics.copilotUsage.total > 0 ? (analytics.copilotUsage.withCopilot / analytics.copilotUsage.total * 100) + '%' : '0%' }">
-                      </div>
+          </div>
+        </div>
+
+        <!-- Analytics Section -->
+        <div v-if="showAnalytics" class="space-y-6">
+          <!-- Enhanced Analytics Overview -->
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <!-- Efficiency Rate Card -->
+            <div class="card">
+              <div class="card-body">
+                <div class="flex items-center">
+                  <div class="flex-shrink-0">
+                    <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                      <span class="text-green-600 text-lg">⚡</span>
                     </div>
                   </div>
-                  <div class="flex justify-between text-xs text-gray-600 mt-1">
-                    <span>With Copilot: {{ analytics.copilotUsage.withCopilot }}</span>
-                    <span>Without: {{ analytics.copilotUsage.withoutCopilot }}</span>
+                  <div class="ml-5 w-0 flex-1">
+                    <dl>
+                      <dt class="text-sm font-medium text-gray-500 truncate">Avg Efficiency Rate</dt>
+                      <dd class="text-lg font-medium text-gray-900">
+                        {{ analytics.averageEfficiency ? analytics.averageEfficiency.toFixed(1) + '%' : 'N/A' }}
+                      </dd>
+                    </dl>
                   </div>
                 </div>
+              </div>
+            </div>
 
-                <!-- Team Distribution -->
-                <div>
-                  <div class="flex justify-between items-center mb-2">
-                    <span class="text-sm font-medium text-gray-700">Team Activity Distribution</span>
-                    <span class="text-sm text-gray-500">{{ analytics.activeTeams }} teams active</span>
+            <!-- Copilot Usage Card -->
+            <div class="card">
+              <div class="card-body">
+                <div class="flex items-center">
+                  <div class="flex-shrink-0">
+                    <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                      <span class="text-blue-600 text-lg">🤖</span>
+                    </div>
                   </div>
-                  <div class="space-y-2">
-                    <div v-for="team in analytics.teamStats.slice(0, 3)" :key="team.name" class="flex items-center justify-between">
-                      <span class="text-xs text-gray-600 truncate w-20">{{ team.name }}</span>
-                      <div class="flex-1 mx-2">
-                        <div class="w-full bg-gray-200 rounded-full h-2">
-                          <div class="bg-gradient-to-r from-blue-500 to-purple-600 h-2 rounded-full" 
-                               :style="{ width: analytics.totalEntries > 0 ? (team.entries / analytics.totalEntries * 100) + '%' : '0%' }">
+                  <div class="ml-5 w-0 flex-1">
+                    <dl>
+                      <dt class="text-sm font-medium text-gray-500 truncate">Copilot Usage</dt>
+                      <dd class="text-lg font-medium text-gray-900">
+                        {{ analytics.copilotUsageRate ? analytics.copilotUsageRate.toFixed(1) + '%' : 'N/A' }}
+                      </dd>
+                    </dl>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Hours per Entry Card -->
+            <div class="card">
+              <div class="card-body">
+                <div class="flex items-center">
+                  <div class="flex-shrink-0">
+                    <div class="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                      <span class="text-orange-600 text-lg">📊</span>
+                    </div>
+                  </div>
+                  <div class="ml-5 w-0 flex-1">
+                    <dl>
+                      <dt class="text-sm font-medium text-gray-500 truncate">Avg Hours/Entry</dt>
+                      <dd class="text-lg font-medium text-gray-900">
+                        {{ analytics.totalEntries > 0 ? (analytics.totalHoursSaved / analytics.totalEntries).toFixed(1) + 'h' : 'N/A' }}
+                      </dd>
+                    </dl>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Active Projects Card -->
+            <div class="card">
+              <div class="card-body">
+                <div class="flex items-center">
+                  <div class="flex-shrink-0">
+                    <div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                      <span class="text-purple-600 text-lg">🚀</span>
+                    </div>
+                  </div>
+                  <div class="ml-5 w-0 flex-1">
+                    <dl>
+                      <dt class="text-sm font-medium text-gray-500 truncate">Active Projects</dt>
+                      <dd class="text-lg font-medium text-gray-900">
+                        {{ analytics.teamStats.length || 0 }}
+                      </dd>
+                    </dl>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Team Performance -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="text-lg font-medium">📊 Team Performance Analytics</h3>
+            </div>
+            <div class="card-body">
+              <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                  <thead class="bg-gray-50">
+                    <tr>
+                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Team
+                      </th>
+                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Hours Saved
+                      </th>
+                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Entries
+                      </th>
+                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Avg per Entry
+                      </th>
+                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Developers
+                      </th>
+                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Productivity
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody class="bg-white divide-y divide-gray-200">
+                    <tr v-for="team in analytics.teamStats" :key="team.name">
+                      <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {{ team.name }}
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-medium">
+                        {{ team.hours.toFixed(1) }}h
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {{ team.entries }}
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {{ team.entries > 0 ? (team.hours / team.entries).toFixed(1) + 'h' : 'N/A' }}
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {{ team.developers || 'N/A' }}
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                          <div class="w-16 bg-gray-200 rounded-full h-2 mr-2">
+                            <div class="bg-blue-600 h-2 rounded-full" 
+                                 :style="{ width: Math.min(100, (team.hours / (analytics.totalHoursSaved || 1) * 100)) + '%' }"></div>
+                          </div>
+                          <span class="text-xs text-gray-500">
+                            {{ analytics.totalHoursSaved > 0 ? ((team.hours / analytics.totalHoursSaved) * 100).toFixed(0) + '%' : '0%' }}
+                          </span>
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recent Activity -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="text-lg font-medium">🕒 Recent Activity</h3>
+            </div>
+            <div class="card-body">
+              <div class="flow-root">
+                <ul class="-mb-8">
+                  <li v-for="(activity, index) in recentActivity" :key="activity.id">
+                    <div class="relative pb-8">
+                      <span v-if="index !== recentActivity.length - 1" 
+                            class="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200" 
+                            aria-hidden="true"></span>
+                      <div class="relative flex space-x-3">
+                        <div>
+                          <span class="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center ring-8 ring-white">
+                            <span class="text-white text-sm">{{ activity.icon }}</span>
+                          </span>
+                        </div>
+                        <div class="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
+                          <div>
+                            <p class="text-sm text-gray-500">
+                              {{ activity.description }}
+                            </p>
+                          </div>
+                          <div class="text-right text-sm whitespace-nowrap text-gray-500">
+                            {{ formatTimeAgo(activity.timestamp) }}
                           </div>
                         </div>
                       </div>
-                      <span class="text-xs text-gray-500 w-12 text-right">{{ team.entries }}</span>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- Top Categories -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Developer Productivity Insights -->
+            <div class="card">
+              <div class="card-header">
+                <h3 class="text-lg font-medium">👨‍💻 Developer Productivity Insights</h3>
+              </div>
+              <div class="card-body">
+                <div class="space-y-4">
+                  <!-- Copilot Usage Breakdown -->
+                  <div>
+                    <div class="flex justify-between items-center mb-2">
+                      <span class="text-sm font-medium text-gray-700">Copilot Usage Distribution</span>
+                      <span class="text-sm text-gray-500">{{ analytics.copilotUsage.total }} total entries</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-3">
+                      <div class="bg-blue-600 h-3 rounded-full flex">
+                        <div class="bg-blue-600 rounded-l-full" 
+                             :style="{ width: analytics.copilotUsage.total > 0 ? (analytics.copilotUsage.withCopilot / analytics.copilotUsage.total * 100) + '%' : '0%' }">
+                        </div>
+                      </div>
+                    </div>
+                    <div class="flex justify-between text-xs text-gray-600 mt-1">
+                      <span>With Copilot: {{ analytics.copilotUsage.withCopilot }}</span>
+                      <span>Without: {{ analytics.copilotUsage.withoutCopilot }}</span>
+                    </div>
+                  </div>
+
+                  <!-- Team Distribution -->
+                  <div>
+                    <div class="flex justify-between items-center mb-2">
+                      <span class="text-sm font-medium text-gray-700">Team Activity Distribution</span>
+                      <span class="text-sm text-gray-500">{{ analytics.activeTeams }} teams active</span>
+                    </div>
+                    <div class="space-y-2">
+                      <div v-for="team in analytics.teamStats.slice(0, 3)" :key="team.name" class="flex items-center justify-between">
+                        <span class="text-xs text-gray-600 truncate w-20">{{ team.name }}</span>
+                        <div class="flex-1 mx-2">
+                          <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-gradient-to-r from-blue-500 to-purple-600 h-2 rounded-full" 
+                                 :style="{ width: analytics.totalEntries > 0 ? (team.entries / analytics.totalEntries * 100) + '%' : '0%' }">
+                            </div>
+                          </div>
+                        </div>
+                        <span class="text-xs text-gray-500 w-12 text-right">{{ team.entries }}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Efficiency Metrics -->
+                  <div v-if="analytics.averageEfficiency">
+                    <div class="flex justify-between items-center mb-2">
+                      <span class="text-sm font-medium text-gray-700">Overall Efficiency</span>
+                      <span class="text-sm font-semibold" :class="analytics.averageEfficiency > 50 ? 'text-green-600' : 'text-yellow-600'">
+                        {{ analytics.averageEfficiency.toFixed(1) }}%
+                      </span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                      <div class="h-2 rounded-full" 
+                           :class="analytics.averageEfficiency > 70 ? 'bg-green-500' : analytics.averageEfficiency > 50 ? 'bg-yellow-500' : 'bg-red-500'"
+                           :style="{ width: Math.min(100, analytics.averageEfficiency) + '%' }">
+                      </div>
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
 
-                <!-- Efficiency Metrics -->
-                <div v-if="analytics.averageEfficiency">
-                  <div class="flex justify-between items-center mb-2">
-                    <span class="text-sm font-medium text-gray-700">Overall Efficiency</span>
-                    <span class="text-sm font-semibold" :class="analytics.averageEfficiency > 50 ? 'text-green-600' : 'text-yellow-600'">
-                      {{ analytics.averageEfficiency.toFixed(1) }}%
-                    </span>
-                  </div>
-                  <div class="w-full bg-gray-200 rounded-full h-2">
-                    <div class="h-2 rounded-full" 
-                         :class="analytics.averageEfficiency > 70 ? 'bg-green-500' : analytics.averageEfficiency > 50 ? 'bg-yellow-500' : 'bg-red-500'"
-                         :style="{ width: Math.min(100, analytics.averageEfficiency) + '%' }">
+            <div class="card">
+              <div class="card-header">
+                <h3 class="text-lg font-medium">🎯 Top Categories by Hours Saved</h3>
+              </div>
+              <div class="card-body">
+                <div class="space-y-3">
+                  <div v-for="category in topCategories" :key="category.name" 
+                       class="flex justify-between items-center">
+                    <span class="text-sm font-medium text-gray-700">{{ category.name }}</span>
+                    <div class="flex items-center space-x-2">
+                      <div class="w-20 bg-gray-200 rounded-full h-2">
+                        <div class="bg-blue-600 h-2 rounded-full" 
+                             :style="{ width: topCategories.length > 0 && topCategories[0].hours > 0 ? (category.hours / topCategories[0].hours * 100) + '%' : '0%' }"></div>
+                      </div>
+                      <span class="text-sm text-gray-500 w-12 text-right">{{ category.hours.toFixed(1) }}h</span>
                     </div>
+                  </div>
+                  
+                  <!-- Show message if no categories -->
+                  <div v-if="topCategories.length === 0" class="text-center py-8 text-gray-500">
+                    <div class="text-4xl mb-2">📊</div>
+                    <p class="text-sm">No category data available yet</p>
+                    <p class="text-xs">Categories will appear as teams log efficiency entries</p>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
+          <!-- Time Trends and Insights -->
           <div class="card">
             <div class="card-header">
-              <h3 class="text-lg font-medium">🎯 Top Categories by Hours Saved</h3>
+              <h3 class="text-lg font-medium">📈 Productivity Trends & Insights</h3>
             </div>
             <div class="card-body">
-              <div class="space-y-3">
-                <div v-for="category in topCategories" :key="category.name" 
-                     class="flex justify-between items-center">
-                  <span class="text-sm font-medium text-gray-700">{{ category.name }}</span>
-                  <div class="flex items-center space-x-2">
-                    <div class="w-20 bg-gray-200 rounded-full h-2">
-                      <div class="bg-blue-600 h-2 rounded-full" 
-                           :style="{ width: topCategories.length > 0 && topCategories[0].hours > 0 ? (category.hours / topCategories[0].hours * 100) + '%' : '0%' }"></div>
-                    </div>
-                    <span class="text-sm text-gray-500 w-12 text-right">{{ category.hours.toFixed(1) }}h</span>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Trend Analysis -->
+                <div class="text-center">
+                  <div class="text-2xl font-bold text-blue-600">
+                    {{ analytics.totalEntries > 0 ? Math.round(analytics.totalHoursSaved / analytics.totalEntries * 10) / 10 : 0 }}h
+                  </div>
+                  <div class="text-sm text-gray-500">Average Hours Saved per Entry</div>
+                  <div class="text-xs text-gray-400 mt-1">
+                    {{ analytics.totalEntries > 0 ? 'Consistent productivity' : 'Start tracking to see trends' }}
                   </div>
                 </div>
                 
-                <!-- Show message if no categories -->
-                <div v-if="topCategories.length === 0" class="text-center py-8 text-gray-500">
-                  <div class="text-4xl mb-2">📊</div>
-                  <p class="text-sm">No category data available yet</p>
-                  <p class="text-xs">Categories will appear as teams log efficiency entries</p>
+                <!-- Velocity Metric -->
+                <div class="text-center">
+                  <div class="text-2xl font-bold text-green-600">
+                    {{ analytics.activeDevelopers > 0 ? Math.round(analytics.totalEntries / analytics.activeDevelopers * 10) / 10 : 0 }}
+                  </div>
+                  <div class="text-sm text-gray-500">Entries per Developer</div>
+                  <div class="text-xs text-gray-400 mt-1">
+                    {{ analytics.activeDevelopers > 0 ? 'Team engagement metric' : 'Add developers to see metrics' }}
+                  </div>
                 </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Time Trends and Insights -->
-        <div class="card">
-          <div class="card-header">
-            <h3 class="text-lg font-medium">📈 Productivity Trends & Insights</h3>
-          </div>
-          <div class="card-body">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <!-- Trend Analysis -->
-              <div class="text-center">
-                <div class="text-2xl font-bold text-blue-600">
-                  {{ analytics.totalEntries > 0 ? Math.round(analytics.totalHoursSaved / analytics.totalEntries * 10) / 10 : 0 }}h
-                </div>
-                <div class="text-sm text-gray-500">Average Hours Saved per Entry</div>
-                <div class="text-xs text-gray-400 mt-1">
-                  {{ analytics.totalEntries > 0 ? 'Consistent productivity' : 'Start tracking to see trends' }}
+                
+                <!-- Impact Metric -->
+                <div class="text-center">
+                  <div class="text-2xl font-bold text-purple-600">
+                    {{ analytics.activeDevelopers > 0 ? Math.round(analytics.totalHoursSaved / analytics.activeDevelopers * 10) / 10 : 0 }}h
+                  </div>
+                  <div class="text-sm text-gray-500">Hours Saved per Developer</div>
+                  <div class="text-xs text-gray-400 mt-1">
+                    {{ analytics.activeDevelopers > 0 ? 'Individual impact score' : 'Track entries to calculate impact' }}
+                  </div>
                 </div>
               </div>
               
-              <!-- Velocity Metric -->
-              <div class="text-center">
-                <div class="text-2xl font-bold text-green-600">
-                  {{ analytics.activeDevelopers > 0 ? Math.round(analytics.totalEntries / analytics.activeDevelopers * 10) / 10 : 0 }}
-                </div>
-                <div class="text-sm text-gray-500">Entries per Developer</div>
-                <div class="text-xs text-gray-400 mt-1">
-                  {{ analytics.activeDevelopers > 0 ? 'Team engagement metric' : 'Add developers to see metrics' }}
-                </div>
-              </div>
-              
-              <!-- Impact Metric -->
-              <div class="text-center">
-                <div class="text-2xl font-bold text-purple-600">
-                  {{ analytics.activeDevelopers > 0 ? Math.round(analytics.totalHoursSaved / analytics.activeDevelopers * 10) / 10 : 0 }}h
-                </div>
-                <div class="text-sm text-gray-500">Hours Saved per Developer</div>
-                <div class="text-xs text-gray-400 mt-1">
-                  {{ analytics.activeDevelopers > 0 ? 'Individual impact score' : 'Track entries to calculate impact' }}
-                </div>
-              </div>
-            </div>
-            
-            <!-- Quick Insights -->
-            <div class="mt-6 p-4 bg-blue-50 rounded-lg">
-              <h4 class="text-sm font-medium text-blue-900 mb-2">💡 Quick Insights</h4>
-              <div class="space-y-1 text-sm text-blue-800">
-                <div v-if="analytics.copilotUsageRate > 70">
-                  <span class="font-medium">High Copilot Adoption:</span> {{ analytics.copilotUsageRate.toFixed(0) }}% usage rate indicates strong AI tool integration
-                </div>
-                <div v-else-if="analytics.copilotUsageRate > 0">
-                  <span class="font-medium">Copilot Opportunity:</span> {{ (100 - analytics.copilotUsageRate).toFixed(0) }}% of entries could benefit from AI assistance
-                </div>
-                <div v-if="analytics.teamStats.length > 0">
-                  <span class="font-medium">Top Performer:</span> {{ analytics.teamStats[0]?.name }} leads with {{ analytics.teamStats[0]?.hours.toFixed(1) }}h saved
-                </div>
-                <div v-if="analytics.totalEntries > 20">
-                  <span class="font-medium">Good Tracking:</span> {{ analytics.totalEntries }} entries show consistent productivity measurement
-                </div>
-                <div v-else-if="analytics.totalEntries > 0">
-                  <span class="font-medium">Building Momentum:</span> {{ analytics.totalEntries }} entries logged - keep tracking for better insights
-                </div>
-                <div v-else>
-                  <span class="font-medium">Getting Started:</span> Start logging efficiency entries to see personalized insights here
+              <!-- Quick Insights -->
+              <div class="mt-6 p-4 bg-blue-50 rounded-lg">
+                <h4 class="text-sm font-medium text-blue-900 mb-2">💡 Quick Insights</h4>
+                <div class="space-y-1 text-sm text-blue-800">
+                  <div v-if="analytics.copilotUsageRate > 70">
+                    <span class="font-medium">High Copilot Adoption:</span> {{ analytics.copilotUsageRate.toFixed(0) }}% usage rate indicates strong AI tool integration
+                  </div>
+                  <div v-else-if="analytics.copilotUsageRate > 0">
+                    <span class="font-medium">Copilot Opportunity:</span> {{ (100 - analytics.copilotUsageRate).toFixed(0) }}% of entries could benefit from AI assistance
+                  </div>
+                  <div v-if="analytics.teamStats.length > 0">
+                    <span class="font-medium">Top Performer:</span> {{ analytics.teamStats[0]?.name }} leads with {{ analytics.teamStats[0]?.hours.toFixed(1) }}h saved
+                  </div>
+                  <div v-if="analytics.totalEntries > 20">
+                    <span class="font-medium">Good Tracking:</span> {{ analytics.totalEntries }} entries show consistent productivity measurement
+                  </div>
+                  <div v-else-if="analytics.totalEntries > 0">
+                    <span class="font-medium">Building Momentum:</span> {{ analytics.totalEntries }} entries logged - keep tracking for better insights
+                  </div>
+                  <div v-else>
+                    <span class="font-medium">Getting Started:</span> Start logging efficiency entries to see personalized insights here
+                  </div>
                 </div>
               </div>
             </div>
@@ -526,7 +522,7 @@
         </div>
       </div>
     </div>
-  </div>
+  </Navigation>
 </template>
 
 <script>
@@ -534,9 +530,13 @@ import { ref, onMounted } from 'vue'
 import { getAdminDashboard, getOverallAnalytics } from '../services/api'
 import { useAuthStore } from '../stores/auth'
 import { useRouter } from 'vue-router'
+import Navigation from '../components/Navigation.vue'
 
 export default {
   name: 'AdminDashboard',
+  components: {
+    Navigation
+  },
   setup() {
     const authStore = useAuthStore()
     const router = useRouter()
@@ -799,11 +799,6 @@ export default {
         return `${minutes} minute${minutes === 1 ? '' : 's'} ago`
       }
     }
-    
-    const logout = () => {
-      authStore.logout()
-      router.push('/admin/login')
-    }
 
     onMounted(() => {
       loadAnalytics()
@@ -817,8 +812,7 @@ export default {
       loading,
       error,
       formatTimeAgo,
-      loadAnalytics,
-      logout
+      loadAnalytics
     }
   }
 }

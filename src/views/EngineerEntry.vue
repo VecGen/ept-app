@@ -1,250 +1,256 @@
 <template>
-  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <!-- Header -->
-    <div class="mb-8">
-      <h1 class="text-3xl font-bold text-gray-900">📝 Log Weekly Update</h1>
-      <p class="mt-2 text-gray-600">Track your efficiency gains from AI coding assistants</p>
-      
-      <!-- Team and Developer Info -->
-      <div v-if="teamName && developerName" class="mt-4 p-3 bg-blue-50 rounded-md">
-        <p class="text-sm text-blue-700">
-          <strong>Team:</strong> {{ teamName }} | <strong>Developer:</strong> {{ developerName }}
-        </p>
-      </div>
-      
-      <!-- Error Message -->
-      <div v-if="error" class="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
-        <p class="text-sm text-red-800">{{ error }}</p>
-      </div>
-    </div>
-
-    <!-- Loading State -->
-    <div v-if="loading" class="text-center py-8">
-      <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      <p class="mt-2 text-gray-600">Loading form settings...</p>
-    </div>
-
-    <!-- Form -->
-    <form v-else @submit.prevent="submitEntry" class="space-y-6">
-      <!-- Week Selection -->
-      <div class="card">
-        <div class="card-header">
-          <h3 class="text-lg font-medium">📅 Week Selection</h3>
-        </div>
-        <div class="card-body">
-          <div class="max-w-xs">
-            <label for="week-date" class="block text-sm font-medium text-gray-700">
-              Select Week
-            </label>
-            <input
-              id="week-date"
-              v-model="form.weekDate"
-              type="date"
-              :max="maxDate"
-              class="input-field"
-              required
-            />
-            <p class="mt-1 text-sm text-gray-500">
-              Select any date within the week you want to log
-            </p>
-          </div>
-          
-          <div v-if="weekRange" class="mt-4 p-3 bg-blue-50 rounded-md">
-            <p class="text-sm text-blue-700">
-              📅 <strong>Selected Week:</strong> {{ weekRange }}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Copilot Usage -->
-      <div class="card">
-        <div class="card-header">
-          <h3 class="text-lg font-medium">🤖 AI Assistant Usage</h3>
-        </div>
-        <div class="card-body">
-          <div class="max-w-xs">
-            <label for="copilot-used" class="block text-sm font-medium text-gray-700">
-              Used GitHub Copilot?
-            </label>
-            <select
-              id="copilot-used"
-              v-model="form.copilotUsed"
-              class="input-field"
-              required
-            >
-              <option value="Yes">Yes</option>
-              <option value="No">No</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <!-- Task Category -->
-      <div class="card">
-        <div class="card-header">
-          <h3 class="text-lg font-medium">📋 Task Category</h3>
-        </div>
-        <div class="card-body">
-          <div class="max-w-xs">
-            <label for="category" class="block text-sm font-medium text-gray-700">
-              Task Category
-            </label>
-            <select
-              id="category"
-              v-model="form.category"
-              class="input-field"
-              required
-            >
-              <option v-for="category in categories" :key="category" :value="category">
-                {{ category }}
-              </option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <!-- Efficiency Areas (only if using Copilot) -->
-      <div v-if="form.copilotUsed === 'Yes'" class="card">
-        <div class="card-header">
-          <h3 class="text-lg font-medium">🎯 Where did Copilot help?</h3>
-        </div>
-        <div class="card-body">
-          <p class="text-sm text-gray-600 mb-4">
-            Select the areas where AI assistance improved your efficiency:
+  <Navigation>
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <!-- Header -->
+      <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900">📝 Log Weekly Update</h1>
+        <p class="mt-2 text-gray-600">Track your efficiency gains from AI coding assistants</p>
+        
+        <!-- Team and Developer Info -->
+        <div v-if="teamName && developerName" class="mt-4 p-3 bg-blue-50 rounded-md">
+          <p class="text-sm text-blue-700">
+            <strong>Team:</strong> {{ teamName }} | <strong>Developer:</strong> {{ developerName }}
           </p>
-          
-          <div class="grid grid-cols-2 gap-3">
-            <div v-for="area in availableEfficiencyAreas" :key="area" class="flex items-center">
-              <input
-                :id="`area-${area}`"
-                v-model="form.efficiencyAreas"
-                :value="area"
-                type="checkbox"
-                class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-              />
-              <label :for="`area-${area}`" class="ml-2 text-sm text-gray-700">
-                {{ area }}
-              </label>
-            </div>
-          </div>
-          
-          <div v-if="form.efficiencyAreas.length > 0" class="mt-4 p-3 bg-green-50 rounded-md">
-            <p class="text-sm text-green-700">
-              🎯 <strong>Selected:</strong> {{ form.efficiencyAreas.join(', ') }}
-            </p>
-          </div>
-          
-          <div v-else class="mt-4 p-3 bg-yellow-50 rounded-md">
-            <p class="text-sm text-yellow-700">
-              ⚠️ Please select at least one efficiency area
-            </p>
-          </div>
+        </div>
+        
+        <!-- Error Message -->
+        <div v-if="error" class="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+          <p class="text-sm text-red-800">{{ error }}</p>
         </div>
       </div>
 
-      <!-- Task Details -->
-      <div class="card">
-        <div class="card-header">
-          <h3 class="text-lg font-medium">📝 Task Details</h3>
-        </div>
-        <div class="card-body">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label for="story-id" class="block text-sm font-medium text-gray-700">
-                Story/Task ID
+      <!-- Loading State -->
+      <div v-if="loading" class="text-center py-8">
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <p class="mt-2 text-gray-600">Loading form settings...</p>
+      </div>
+
+      <!-- Form -->
+      <form v-else @submit.prevent="submitEntry" class="space-y-6">
+        <!-- Week Selection -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="text-lg font-medium">📅 Week Selection</h3>
+          </div>
+          <div class="card-body">
+            <div class="max-w-xs">
+              <label for="week-date" class="block text-sm font-medium text-gray-700">
+                Select Week
               </label>
               <input
-                id="story-id"
-                v-model="form.storyId"
-                type="text"
-                placeholder="e.g., ENG-1542"
+                id="week-date"
+                v-model="form.weekDate"
+                type="date"
+                :max="maxDate"
                 class="input-field"
+                required
               />
+              <p class="mt-1 text-sm text-gray-500">
+                Select any date within the week you want to log
+              </p>
             </div>
             
-            <div>
-              <label for="original-estimate" class="block text-sm font-medium text-gray-700">
-                Original Estimate (Hours)
+            <div v-if="weekRange" class="mt-4 p-3 bg-blue-50 rounded-md">
+              <p class="text-sm text-blue-700">
+                📅 <strong>Selected Week:</strong> {{ weekRange }}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Copilot Usage -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="text-lg font-medium">🤖 AI Assistant Usage</h3>
+          </div>
+          <div class="card-body">
+            <div class="max-w-xs">
+              <label for="copilot-used" class="block text-sm font-medium text-gray-700">
+                Used GitHub Copilot?
+              </label>
+              <select
+                id="copilot-used"
+                v-model="form.copilotUsed"
+                class="input-field"
+                required
+              >
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Task Category -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="text-lg font-medium">📋 Task Category</h3>
+          </div>
+          <div class="card-body">
+            <div class="max-w-xs">
+              <label for="category" class="block text-sm font-medium text-gray-700">
+                Task Category
+              </label>
+              <select
+                id="category"
+                v-model="form.category"
+                class="input-field"
+                required
+              >
+                <option v-for="category in categories" :key="category" :value="category">
+                  {{ category }}
+                </option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Efficiency Areas (only if using Copilot) -->
+        <div v-if="form.copilotUsed === 'Yes'" class="card">
+          <div class="card-header">
+            <h3 class="text-lg font-medium">🎯 Where did Copilot help?</h3>
+          </div>
+          <div class="card-body">
+            <p class="text-sm text-gray-600 mb-4">
+              Select the areas where AI assistance improved your efficiency:
+            </p>
+            
+            <div class="grid grid-cols-2 gap-3">
+              <div v-for="area in availableEfficiencyAreas" :key="area" class="flex items-center">
+                <input
+                  :id="`area-${area}`"
+                  v-model="form.efficiencyAreas"
+                  :value="area"
+                  type="checkbox"
+                  class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <label :for="`area-${area}`" class="ml-2 text-sm text-gray-700">
+                  {{ area }}
+                </label>
+              </div>
+            </div>
+            
+            <div v-if="form.efficiencyAreas.length > 0" class="mt-4 p-3 bg-green-50 rounded-md">
+              <p class="text-sm text-green-700">
+                🎯 <strong>Selected:</strong> {{ form.efficiencyAreas.join(', ') }}
+              </p>
+            </div>
+            
+            <div v-else class="mt-4 p-3 bg-yellow-50 rounded-md">
+              <p class="text-sm text-yellow-700">
+                ⚠️ Please select at least one efficiency area
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Task Details -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="text-lg font-medium">📝 Task Details</h3>
+          </div>
+          <div class="card-body">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label for="story-id" class="block text-sm font-medium text-gray-700">
+                  Story/Task ID
+                </label>
+                <input
+                  id="story-id"
+                  v-model="form.storyId"
+                  type="text"
+                  placeholder="e.g., ENG-1542"
+                  class="input-field"
+                />
+              </div>
+              
+              <div>
+                <label for="original-estimate" class="block text-sm font-medium text-gray-700">
+                  Original Estimate (Hours)
+                </label>
+                <input
+                  id="original-estimate"
+                  v-model.number="form.originalEstimate"
+                  type="number"
+                  min="0"
+                  step="0.5"
+                  placeholder="0.0"
+                  class="input-field"
+                  required
+                />
+                <p class="mt-1 text-xs text-gray-500">
+                  How long would this have taken without Copilot?
+                </p>
+              </div>
+            </div>
+            
+            <div class="mt-6">
+              <label for="efficiency-gained" class="block text-sm font-medium text-gray-700">
+                Time Saved (Hours)
               </label>
               <input
-                id="original-estimate"
-                v-model.number="form.originalEstimate"
+                id="efficiency-gained"
+                v-model.number="form.efficiencyGained"
                 type="number"
                 min="0"
                 step="0.5"
                 placeholder="0.0"
-                class="input-field"
+                class="input-field max-w-xs"
                 required
               />
               <p class="mt-1 text-xs text-gray-500">
-                How long would this have taken without Copilot?
+                How much time did AI assistance save you?
               </p>
             </div>
-          </div>
-          
-          <div class="mt-6">
-            <label for="efficiency-gained" class="block text-sm font-medium text-gray-700">
-              Time Saved (Hours)
-            </label>
-            <input
-              id="efficiency-gained"
-              v-model.number="form.efficiencyGained"
-              type="number"
-              min="0"
-              step="0.5"
-              placeholder="0.0"
-              class="input-field max-w-xs"
-              required
-            />
-            <p class="mt-1 text-xs text-gray-500">
-              How much time did AI assistance save you?
-            </p>
-          </div>
-          
-          <div class="mt-6">
-            <label for="notes" class="block text-sm font-medium text-gray-700">
-              Notes (Optional)
-            </label>
-            <textarea
-              id="notes"
-              v-model="form.notes"
-              rows="3"
-              placeholder="Additional details about the task and efficiency gains..."
-              class="input-field"
-            ></textarea>
+            
+            <div class="mt-6">
+              <label for="notes" class="block text-sm font-medium text-gray-700">
+                Notes (Optional)
+              </label>
+              <textarea
+                id="notes"
+                v-model="form.notes"
+                rows="3"
+                placeholder="Additional details about the task and efficiency gains..."
+                class="input-field"
+              ></textarea>
+            </div>
           </div>
         </div>
-      </div>
 
-      <!-- Submit Button -->
-      <div class="flex justify-end space-x-3">
-        <router-link 
-          :to="authStore.isAuthenticated ? '/engineer' : `/engineer?team=${teamName}&dev=${developerName}`"
-          class="btn-secondary"
-        >
-          Cancel
-        </router-link>
-        <button
-          type="submit"
-          :disabled="!canSubmit || submitting"
-          class="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <span v-if="submitting">Saving...</span>
-          <span v-else>Save Entry</span>
-        </button>
-      </div>
-    </form>
-  </div>
+        <!-- Submit Button -->
+        <div class="flex justify-end space-x-3">
+          <router-link 
+            :to="authStore.isAuthenticated ? '/engineer' : `/engineer?team=${teamName}&dev=${developerName}`"
+            class="btn-secondary"
+          >
+            Cancel
+          </router-link>
+          <button
+            type="submit"
+            :disabled="!canSubmit || submitting"
+            class="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <span v-if="submitting">Saving...</span>
+            <span v-else>Save Entry</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </Navigation>
 </template>
 
 <script>
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import Navigation from '../components/Navigation.vue'
 
 export default {
   name: 'EngineerEntry',
+  components: {
+    Navigation
+  },
   setup() {
     const router = useRouter()
     const route = useRoute()
@@ -253,19 +259,13 @@ export default {
     const loading = ref(true)
     const error = ref(null)
     
-    // Get team and developer from auth store first, then URL parameters
+    // Get team and developer info from auth store first, then route params as fallback
     const teamName = computed(() => {
-      if (authStore.isAuthenticated && authStore.user?.team) {
-        return authStore.user.team
-      }
-      return route.query.team || ''
+      return authStore.user?.team || route.query.team || 'Unknown Team'
     })
-
+    
     const developerName = computed(() => {
-      if (authStore.isAuthenticated && authStore.user?.name) {
-        return authStore.user.name
-      }
-      return route.query.dev || ''
+      return authStore.user?.name || route.query.dev || 'Unknown Developer'
     })
 
     // Check and redirect if unknown user detected
@@ -465,13 +465,10 @@ export default {
           const result = await response.json()
           console.log('Entry saved successfully:', result)
           
-          // Show success message and redirect based on authentication status
+          // Show success message and redirect to dashboard with proper parameters
           alert('Entry saved successfully!')
-          if (authStore.isAuthenticated) {
-            router.push('/engineer')
-          } else {
-            router.push(`/engineer?team=${teamName.value}&dev=${developerName.value}`)
-          }
+          // Always include team and dev parameters for proper dashboard functionality
+          router.push(`/engineer?team=${encodeURIComponent(teamName.value)}&dev=${encodeURIComponent(developerName.value)}`)
         } else {
           const errorData = await response.json()
           throw new Error(errorData.detail || `HTTP ${response.status}`)
@@ -511,4 +508,31 @@ export default {
     }
   }
 }
-</script> 
+</script>
+
+<style scoped>
+/* Light, clean styling to match the original design */
+.card {
+  @apply bg-white shadow-sm border border-gray-200 rounded-lg overflow-hidden;
+}
+
+.card-header {
+  @apply px-6 py-4 bg-gray-50 border-b border-gray-200;
+}
+
+.card-body {
+  @apply px-6 py-4;
+}
+
+.input-field {
+  @apply mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm;
+}
+
+.btn-primary {
+  @apply inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500;
+}
+
+.btn-secondary {
+  @apply inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500;
+}
+</style> 

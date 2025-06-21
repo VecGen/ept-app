@@ -69,6 +69,35 @@ const routes = [
     name: 'EngineerEntry',
     component: EngineerEntry,
     meta: { requiresAuth: true, userType: 'engineer' }
+  },
+  {
+    path: '/engineer/dashboard',
+    name: 'EngineerDashboardWithParams',
+    component: EngineerDashboard,
+    meta: { requiresAuth: true, userType: 'engineer' }
+  },
+  {
+    path: '/engineer/analytics',
+    name: 'EngineerAnalytics',
+    component: EngineerDashboard,
+    meta: { requiresAuth: true, userType: 'engineer' }
+  },
+  {
+    path: '/engineer/profile',
+    name: 'EngineerProfile',
+    component: EngineerDashboard,
+    meta: { requiresAuth: true, userType: 'engineer' }
+  },
+  {
+    path: '/admin/access',
+    name: 'AdminAccess',
+    component: AdminDashboard,
+    meta: { requiresAuth: true, userType: 'admin' }
+  },
+  {
+    path: '/help',
+    name: 'Help',
+    component: Home
   }
 ]
 

@@ -5,7 +5,7 @@
         <div class="text-center">
           <div class="bg-gradient-to-r from-green-600 to-blue-600 rounded-lg p-6 text-white mb-6">
             <h1 class="text-2xl font-bold">👩‍💻 Engineer Access</h1>
-            <p class="text-sm opacity-90 mt-2">Enter your details to continue</p>
+            <p class="text-sm opacity-90 mt-2">Sign in with your email and password</p>
           </div>
         </div>
         <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
@@ -16,32 +16,17 @@
       <form class="mt-8 space-y-6" @submit.prevent="handleLogin">
         <div class="space-y-4">
           <div>
-            <label for="developer_name" class="block text-sm font-medium text-gray-700">
-              Developer Name
+            <label for="email" class="block text-sm font-medium text-gray-700">
+              Email Address
             </label>
             <input
-              id="developer_name"
-              name="developer_name"
-              type="text"
+              id="email"
+              name="email"
+              type="email"
               required
-              v-model="formData.developer_name"
+              v-model="formData.email"
               class="input-field"
-              placeholder="Enter your name"
-            />
-          </div>
-
-          <div>
-            <label for="team_name" class="block text-sm font-medium text-gray-700">
-              Team Name
-            </label>
-            <input
-              id="team_name"
-              name="team_name"
-              type="text"
-              required
-              v-model="formData.team_name"
-              class="input-field"
-              placeholder="Enter your team name"
+              placeholder="Enter your email address"
             />
           </div>
 
@@ -58,9 +43,6 @@
               class="input-field"
               placeholder="Enter your password"
             />
-            <p class="text-xs text-gray-500 mt-1">
-              If you don't have a password set, use any value to continue
-            </p>
           </div>
         </div>
 
@@ -77,7 +59,7 @@
             <span class="absolute left-0 inset-y-0 flex items-center pl-3">
               <UserIcon class="h-5 w-5 text-green-500 group-hover:text-green-400" aria-hidden="true" />
             </span>
-            {{ loading ? 'Signing in...' : 'Access Dashboard' }}
+            {{ loading ? 'Signing in...' : 'Sign In' }}
           </button>
         </div>
 
@@ -108,8 +90,7 @@ export default {
     const authStore = useAuthStore()
     
     const formData = reactive({
-      developer_name: '',
-      team_name: '',
+      email: '',
       password: ''
     })
     
@@ -118,23 +99,11 @@ export default {
 
     // Load data from URL parameters on component mount
     onMounted(() => {
-      const urlDeveloper = route.query.developer || ''
-      const urlTeam = route.query.team || ''
+      const urlEmail = route.query.email || ''
       
-      // Check if we have unknown user/team from URL redirect
-      if (urlDeveloper === 'Unknown Developer' || urlTeam === 'Unknown Team') {
-        error.value = 'Please enter your correct developer name and team name to continue.'
-        // Clear the unknown values
-        formData.developer_name = ''
-        formData.team_name = ''
-      } else {
-        // Pre-populate form with URL parameters if available
-        if (urlDeveloper) {
-          formData.developer_name = decodeURIComponent(urlDeveloper)
-        }
-        if (urlTeam) {
-          formData.team_name = decodeURIComponent(urlTeam)
-        }
+      // Pre-populate form with URL parameters if available
+      if (urlEmail) {
+        formData.email = decodeURIComponent(urlEmail)
       }
     })
 
@@ -143,10 +112,14 @@ export default {
       error.value = ''
 
       try {
-        await authStore.engineerLogin(formData.team_name, formData.developer_name, formData.password)
+        const response = await authStore.engineerLogin(formData.email, formData.password)
         
-        // Redirect to the intended destination or default engineer dashboard
-        const redirectTo = route.query.redirect || '/engineer'
+        // Get user data from the auth store after successful login
+        const user = authStore.user
+        
+        // Redirect to engineer dashboard with proper parameters from user data
+        const redirectTo = `/engineer?team=${encodeURIComponent(user.team || 'Unknown Team')}&dev=${encodeURIComponent(user.name || 'Developer')}`
+        
         router.push(redirectTo)
       } catch (err) {
         error.value = err.message

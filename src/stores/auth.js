@@ -40,19 +40,32 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    async engineerLogin(teamName, developerName, password) {
+    async engineerLogin(email, password) {
       try {
-        console.log('Attempting engineer login...', { teamName, developerName })
-        const response = await engineerLogin(teamName, developerName, password)
+        console.log('Attempting engineer login...', { email })
+        const response = await engineerLogin(email, password)
         console.log('Engineer login response:', response)
         
         this.token = response.access_token
         this.userType = response.user_type
         this.isAuthenticated = true
-        this.user = { 
-          type: 'engineer',
-          name: developerName,
-          team: teamName
+        
+        // Handle user data from the API response
+        if (response.user_data) {
+          this.user = { 
+            type: 'engineer',
+            email: email,
+            name: response.user_data.developer_name || response.user_data.name,
+            team: response.user_data.team_name || response.user_data.team,
+            ...response.user_data
+          }
+        } else {
+          this.user = { 
+            type: 'engineer',
+            email: email,
+            name: 'Developer',
+            team: 'Unknown Team'
+          }
         }
         
         console.log('Auth store updated:', {
@@ -65,12 +78,14 @@ export const useAuthStore = defineStore('auth', {
         return { success: true }
       } catch (error) {
         console.error('Engineer login failed:', error)
-        throw new Error(error.response?.data?.detail || 'Invalid credentials')
+        throw new Error(error.response?.data?.detail || 'Invalid email or password')
       }
     },
 
     logout() {
       apiLogout()
+      // Clear user data from localStorage as well
+      localStorage.removeItem('user_data')
       this.user = null
       this.token = null
       this.userType = null
@@ -81,14 +96,32 @@ export const useAuthStore = defineStore('auth', {
     checkAuth() {
       const token = localStorage.getItem('auth_token')
       const userType = localStorage.getItem('user_type')
+      const userData = localStorage.getItem('user_data')
       
-      console.log('Checking auth on load:', { token: !!token, userType })
+      console.log('Checking auth on load:', { token: !!token, userType, userData: !!userData })
       
       if (token && userType) {
         this.token = token
         this.userType = userType
         this.isAuthenticated = true
-        this.user = { type: userType }
+        
+        // Restore user data if available
+        if (userData && userType === 'engineer') {
+          try {
+            const parsedUserData = JSON.parse(userData)
+            this.user = { 
+              type: 'engineer',
+              ...parsedUserData
+            }
+            console.log('Auth and user data restored from localStorage:', this.user)
+          } catch (error) {
+            console.error('Failed to parse user data:', error)
+            this.user = { type: userType }
+          }
+        } else {
+          this.user = { type: userType }
+        }
+        
         console.log('Auth restored from localStorage')
       } else {
         console.log('No auth found in localStorage')
